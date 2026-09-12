@@ -58,7 +58,9 @@ and delete `~/Library/LaunchAgents/com.alexdrone.be-news-agent.plist`.
   static copy the panel shows the command to run instead:
   `python3 be_news_agent.py --add NVDA` (or `--remove NVDA`).
 
-## Running it as a website (news.beat-trade.com)
+## Running it as a website: https://news.beat-trade.com
+Live since 12 Sep 2026 on Render (service `stock-newsroom`, Starter instance, Frankfurt blueprint,
+1 GB disk at `/data`). Render URL: https://stock-newsroom.onrender.com
 `server.py` serves the page, refreshes the news every `REFRESH_HOURS` (default 2) and
 provides the add/remove API. Locally:
 ```
