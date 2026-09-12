@@ -1,3 +1,5 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Daily Stock Newsroom</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -37,7 +39,7 @@ h1 span{color:var(--accent)}
 .tab[aria-selected="true"] .nm{color:var(--accent)}
 .tab:hover{background:var(--chip)}
 .tab:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
-.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-top:0}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-top:0}
 .tile{background:var(--surface);padding:14px 16px 12px}
 .tile .lbl{font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .tile .val{font-family:var(--font-display);font-weight:600;font-size:30px;line-height:1.1;margin-top:4px;font-variant-numeric:tabular-nums}
@@ -280,7 +282,7 @@ function showSummary(){
   document.getElementById('overview').innerHTML=companies.map(c=>{
     const week=c.items.filter(i=>now-i.d<7*864e5), t=c.items.filter(i=>dayKey(i.d)===today).length;
     return `<button class="co" data-t="${esc(c.ticker)}"><span class="nm">${esc(c.name)}</span><span class="tk">${esc(c.exchange)}: ${esc(c.ticker)}</span>
-      <span class="px">${c.last?'$'+c.last.c.toFixed(2):'—'}</span>${spark(c.closes)}<span class="dc ${cls(c.dayPct)}">${pct(c.dayPct)} today</span>
+      <span class="px">${c.last?'$'+c.last.c.toFixed(2):'—'}</span>${spark(c.closes)}<span class="dc"><span class="${cls(c.dayPct)}">${pct(c.dayPct)} today</span> · <span class="${cls(c.ytd_change_pct)}">${pct(c.ytd_change_pct)} YTD</span></span>
       ${c.fundamentals&&c.fundamentals.values?`<span class="fr">${[['market_cap','Cap'],['pe','P/E'],['fwd_pe','Fwd P/E'],['ps','P/S'],['ev_ebitda','EV/EBITDA']].filter(([k])=>c.fundamentals.values[k]).map(([k,l])=>`<span>${l} <b>${esc(c.fundamentals.values[k])}</b></span>`).join('')}</span>`:''}
       <span class="cnt">${t} headline${t===1?'':'s'} today · ${week.length} this week · <span class="up">${week.filter(i=>i.score>0).length}</span>/<span class="down">${week.filter(i=>i.score<0).length}</span></span></button>`;}).join('');
   document.querySelectorAll('.co').forEach(b=>b.onclick=()=>selectTab(b.dataset.t));
@@ -368,6 +370,7 @@ function renderTiles(c){
   <div class="tile"><div class="lbl">Last close</div><div class="val">${last?'$'+last.c.toFixed(2):'—'}</div><div class="sub">${last?fmtD.format(new Date(last.t)):''}</div></div>
   <div class="tile"><div class="lbl">Day change</div><div class="val ${cls(dayPct)}">${pct(dayPct)}</div><div class="sub">vs previous close</div></div>
   <div class="tile"><div class="lbl">90-day change</div><div class="val ${cls(rangePct)}">${pct(rangePct)}</div><div class="sub">range $${lo.toFixed(0)}–$${hi.toFixed(0)}</div></div>
+  <div class="tile"><div class="lbl">Year to date</div><div class="val ${cls(c.ytd_change_pct)}">${pct(c.ytd_change_pct)}</div><div class="sub">since last close of ${new Date().getFullYear()-1}</div></div>
   <div class="tile"><div class="lbl">Headlines today</div><div class="val">${todayN}</div><div class="sub">${week.length} in the last 7 days</div></div>
   <div class="tile"><div class="lbl">Tone, 7 days</div><div class="val"><span class="up">${week.filter(i=>i.score>0).length}</span> <span style="color:var(--muted);font-size:20px">/</span> <span class="down">${week.filter(i=>i.score<0).length}</span></div><div class="sub">positive / negative</div></div>`;
 }

@@ -111,7 +111,7 @@ def feeds_for(c):
 
 
 def chart_url(ticker):
-    return f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?range=3mo&interval=1d"
+    return f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?range=1y&interval=1d"
 
 
 def relevant(company, title):
@@ -219,9 +219,14 @@ def fetch_price(ticker):
         res = r.json()["chart"]["result"][0]
         meta = res["meta"]
         raw = res["indicators"]["quote"][0]["close"]
-        series = [{"t": t * 1000, "c": round(c, 2)} for t, c in zip(res["timestamp"], raw) if c is not None]
-        closes = [p["c"] for p in series]
+        full = [{"t": t * 1000, "c": round(c, 2)} for t, c in zip(res["timestamp"], raw) if c is not None]
         price = meta.get("regularMarketPrice")
+        year = dt.datetime.now().year
+        prev_year = [p for p in full if dt.datetime.fromtimestamp(p["t"] / 1000).year < year]
+        ytd_base = prev_year[-1]["c"] if prev_year else (full[0]["c"] if full else None)  # last close of previous year
+        ytd_pct = (price - ytd_base) / ytd_base * 100 if ytd_base and price else None
+        series = full[-64:]            # ~3 months for the chart
+        closes = [p["c"] for p in series]
         prev = meta.get("chartPreviousClose") or (closes[-2] if len(closes) > 1 else price)
         prev_day = closes[-2] if len(closes) > 1 else prev
         return {
@@ -230,6 +235,7 @@ def fetch_price(ticker):
             "month_change_pct": (price - closes[-22]) / closes[-22] * 100 if len(closes) > 22 else 0.0,
             "closes": closes[-22:],
             "series": series,
+            "ytd_change_pct": ytd_pct,
             "currency": meta.get("currency", "USD"),
         }
     except Exception as e:  # noqa: BLE001
@@ -454,6 +460,11 @@ def render(company, items, price, hours, out_path, fund=None):
         d.text((PAD + 520, y + 22), "Last month", font=small_f, fill=MUTED)
         d.text((PAD + 520, y + 48), f"{price['month_change_pct']:+.1f}%", font=font(34, True),
                fill=GREEN if mup else RED)
+        if price.get("ytd_change_pct") is not None:
+            yup = price["ytd_change_pct"] >= 0
+            d.text((PAD + 520, y + 98), "Year to date", font=small_f, fill=MUTED)
+            d.text((PAD + 520, y + 120), f"{price['ytd_change_pct']:+.1f}%", font=font(26, True),
+                   fill=GREEN if yup else RED)
         sp = sparkline(price["closes"], 480, 120, mup)
         img.paste(sp, (W - PAD - 510, y + 25), sp)
     else:
@@ -570,6 +581,7 @@ def build_page(companies, results):
         data["companies"].append({
             "ticker": c["ticker"], "name": c["name"], "exchange": c["exchange"],
             "fundamentals": fund,
+            "ytd_change_pct": (price or {}).get("ytd_change_pct"),
             "closes": (price or {}).get("series", []),
             "items": [{"title": h["title"], "link": h["link"], "source": h["source"],
                        "time": h["time"], "score": h["score"],

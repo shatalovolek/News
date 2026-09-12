@@ -94,7 +94,13 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(503, b"<p>Collecting news for the first time, reload in a minute.</p>",
                                   "text/html; charset=utf-8", {"Retry-After": "60"})
             with open(agent.PAGE, "rb") as f:
-                return self._send(200, f.read(), "text/html; charset=utf-8")
+                body = f.read()
+            # the template is head-less (the hosted artifact adds its own skeleton); browsers need
+            # a real document with the viewport meta, otherwise phones render the desktop layout
+            doc = (b'<!doctype html><html lang="en"><head><meta charset="utf-8">'
+                   b'<meta name="viewport" content="width=device-width, initial-scale=1">'
+                   b'<link rel="icon" href="data:,"></head><body>' + body + b'</body></html>')
+            return self._send(200, doc, "text/html; charset=utf-8")
         if path == "/api/health":
             return self._send(200, {"ok": True, "last_run": STATE["last_run"], "running": STATE["running"],
                                     "last_error": STATE["last_error"], "companies": len(agent.load_companies())})
