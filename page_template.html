@@ -124,8 +124,28 @@ h2.sec small{font-family:var(--font-mono);font-size:12px;color:var(--muted);font
 .tracked .chip b{font-weight:500}.tracked .chip button{border:0;background:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:0}
 .tracked .chip button:hover{color:var(--neg)}
 @media (max-width:640px){
-  .day{grid-template-columns:1fr;gap:10px}.day-head{position:static}
-  .item{grid-template-columns:44px 4px 1fr}.updated{text-align:left}
+  body{font-size:17px}
+  header.top{padding-block:20px 14px}
+  h1{font-size:34px}.updated{text-align:left;font-size:13px}.eyebrow{font-size:13px}
+  .tabs{gap:2px;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{min-width:150px;padding:12px 14px 11px;flex:0 0 auto}.tab .nm{font-size:20px}.tab .tk{font-size:13px}.tab .ch{font-size:13px}
+  .tab.add{min-width:130px;margin-left:0}.tab.add .nm{font-size:17px}
+  .tiles{grid-template-columns:1fr 1fr}.tile{padding:16px 16px 14px}.tile .lbl{font-size:12.5px}.tile .val{font-size:34px}.tile .sub{font-size:14px}
+  section.chart{padding:14px 10px 6px}.chart-head h2{font-size:18px}.legend{font-size:13px}
+  svg text{font-size:15px}
+  .controls{gap:8px;padding-block:10px}.controls input,.controls select{font-size:16px;padding:10px 12px}
+  .chip{font-size:15px;padding:8px 13px}.chip .n{font-size:13px}.count{font-size:13px;width:100%;margin-left:0}
+  .day{grid-template-columns:1fr;gap:8px;padding-block:18px}.day-head{position:static;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px}
+  .day-head .d{font-size:24px}.day-head .w{font-size:13px}.day-head .p{margin-top:0;font-size:13px;width:100%}
+  .item{grid-template-columns:52px 4px 1fr;padding:11px 0}.item .t{font-size:14px}
+  .item h3{font-size:19px;line-height:1.3}.item .m{font-size:14px;margin-top:5px}.tag{font-size:11.5px}
+  .overview{grid-template-columns:1fr;gap:10px}.co{padding:16px 18px}.co .nm{font-size:22px}.co .tk{font-size:12.5px}.co .px{font-size:28px}.co .dc{font-size:14px}.co .cnt{font-size:14px}.co svg{width:110px;height:36px}
+  h2.sec{font-size:22px;margin-top:28px;flex-wrap:wrap;gap:4px 12px}h2.sec small{font-size:13px}
+  .top .item{grid-template-columns:auto 4px 1fr}.top .when{width:64px;font-size:13px}
+  .percos{grid-template-columns:1fr;gap:20px}.perco h3{font-size:19px}.perco li{font-size:16.5px;padding:10px 0}.perco li .m{font-size:13px}
+  .addpanel{padding:14px}.addpanel input{font-size:16px;padding:10px 12px}.btn{font-size:16px;padding:10px 16px}.addpanel .msg{font-size:15px}
+  footer{font-size:14px}
 }
 @media (prefers-reduced-motion:reduce){.tip{transition:none}}
 </style>
@@ -328,7 +348,9 @@ function renderChart(c){
   const {closes,last,items} = c;
   if(!closes.length){ svg.innerHTML=`<text x="550" y="150" text-anchor="middle">No price data</text>`; return; }
   const hi = Math.max(...closes.map(x=>x.c)), lo = Math.min(...closes.map(x=>x.c));
-  const W=1100,H=300,L=56,R=16,T=14,B=28, priceH=170, gapH=14, barTop=T+priceH+gapH, barH=H-B-barTop;
+  const narrow=window.innerWidth<640;
+  const W=narrow?600:1100,H=narrow?360:300,L=narrow?52:56,R=narrow?12:16,T=14,B=narrow?32:28, priceH=narrow?210:170, gapH=14, barTop=T+priceH+gapH, barH=H-B-barTop;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
   const t0=closes[0].t, t1=closes[closes.length-1].t;
   const x = t => L + (t-t0)/(t1-t0||1)*(W-L-R);
   const pad=(hi-lo)*0.08 || 1; const y = v => T + (1-(v-lo+pad)/(hi-lo+2*pad))*priceH;
@@ -366,6 +388,7 @@ function renderChart(c){
   });
   hit.addEventListener('mouseleave',()=>{tip.style.opacity=0; cross.style.display='none';});
 }
+let rz; window.addEventListener('resize',()=>{clearTimeout(rz); rz=setTimeout(()=>{ if(active && companyView.hidden===false) renderChart(active); },200);});
 
 // ---- filters + timeline
 const srcSel=document.getElementById('src'), chips=document.getElementById('chips');
