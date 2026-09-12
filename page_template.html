@@ -82,6 +82,19 @@ svg text{font-family:var(--font-mono);font-size:11px;fill:var(--muted)}
 .tag.pos{background:var(--pos-soft);color:var(--pos)}.tag.neg{background:var(--neg-soft);color:var(--neg)}
 .empty{padding:40px 0;color:var(--muted);text-align:center}
 footer{margin-top:28px;font-size:12px;color:var(--muted);line-height:1.6;max-width:70ch}
+/* fundamentals */
+.funds{background:var(--surface);border:1px solid var(--line);border-top:0;padding:14px 16px 12px}
+.funds-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px}
+.funds-head h2{font-family:var(--font-display);font-size:18px;font-weight:600;margin:0}
+.funds-head small{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:1px;background:var(--line-soft);border:1px solid var(--line-soft);margin-top:10px}
+.f{background:var(--surface);padding:9px 12px 8px}
+.f .k{font-family:var(--font-mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.f .v{font-family:var(--font-display);font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:2px;line-height:1.1}
+.f .v.up{color:var(--pos)}.f .v.down{color:var(--neg)}
+.f .v.small{font-size:15px;font-family:var(--font-mono);font-weight:500}
+.co .fr{grid-column:1/-1;font-family:var(--font-mono);font-size:11.5px;color:var(--muted);margin-top:4px;display:flex;flex-wrap:wrap;gap:4px 12px}
+.co .fr b{font-weight:500;color:var(--ink)}
 /* summary view */
 .overview{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin-top:20px}
 .co{background:var(--surface);border:1px solid var(--line);padding:14px 16px;cursor:pointer;text-align:left;font:inherit;color:inherit;display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:end}
@@ -140,6 +153,7 @@ h2.sec small{font-family:var(--font-mono);font-size:12px;color:var(--muted);font
   .day-head .d{font-size:24px}.day-head .w{font-size:13px}.day-head .p{margin-top:0;font-size:13px;width:100%}
   .item{grid-template-columns:52px 4px 1fr;padding:11px 0}.item .t{font-size:14px}
   .item h3{font-size:19px;line-height:1.3}.item .m{font-size:14px;margin-top:5px}.tag{font-size:11.5px}
+  .fgrid{grid-template-columns:1fr 1fr}.f .v{font-size:22px}.f .k{font-size:12px}
   .overview{grid-template-columns:1fr;gap:10px}.co{padding:16px 18px}.co .nm{font-size:22px}.co .tk{font-size:12.5px}.co .px{font-size:28px}.co .dc{font-size:14px}.co .cnt{font-size:14px}.co svg{width:110px;height:36px}
   h2.sec{font-size:22px;margin-top:28px;flex-wrap:wrap;gap:4px 12px}h2.sec small{font-size:13px}
   .top .item{grid-template-columns:auto 4px 1fr}.top .when{width:64px;font-size:13px}
@@ -177,6 +191,10 @@ h2.sec small{font-family:var(--font-mono);font-size:12px;color:var(--muted);font
 
 <div id="company-view">
 <div class="tiles" id="tiles"></div>
+<section class="funds" id="funds" hidden>
+  <div class="funds-head"><h2>Fundamentals</h2><small id="funds-note"></small></div>
+  <div class="fgrid" id="fgrid"></div>
+</section>
 <section class="chart">
   <div class="chart-head"><h2 id="chart-title">Share price and news volume, last 90 days</h2>
     <div class="legend"><span><i></i>close (USD)</span><span><i class="bar"></i>headlines per day</span></div></div>
@@ -193,7 +211,7 @@ h2.sec small{font-family:var(--font-mono);font-size:12px;color:var(--muted);font
 <div id="timeline"></div>
 </div>
 
-<footer>Sources: Google News and Yahoo Finance RSS, de-duplicated, collected several times a day for every tracked company. "Most important" ranks headlines by a heuristic: real events (earnings, deals, lawsuits, launches) from major outlets score high; holdings filings, listicles and stock-tip pieces score low. Tone tags come from a keyword heuristic on the headline and are a reading aid, not investment advice. Times are shown in your local time zone.</footer>
+<footer>Fundamentals: Finviz or StockAnalysis, refreshed with the news; trailing-twelve-month figures where applicable. Sources: Google News and Yahoo Finance RSS, de-duplicated, collected several times a day for every tracked company. "Most important" ranks headlines by a heuristic: real events (earnings, deals, lawsuits, launches) from major outlets score high; holdings filings, listicles and stock-tip pieces score low. Tone tags come from a keyword heuristic on the headline and are a reading aid, not investment advice. Times are shown in your local time zone.</footer>
 </div>
 
 <script id="data" type="application/json">__DATA__</script>
@@ -263,6 +281,7 @@ function showSummary(){
     const week=c.items.filter(i=>now-i.d<7*864e5), t=c.items.filter(i=>dayKey(i.d)===today).length;
     return `<button class="co" data-t="${esc(c.ticker)}"><span class="nm">${esc(c.name)}</span><span class="tk">${esc(c.exchange)}: ${esc(c.ticker)}</span>
       <span class="px">${c.last?'$'+c.last.c.toFixed(2):'—'}</span>${spark(c.closes)}<span class="dc ${cls(c.dayPct)}">${pct(c.dayPct)} today</span>
+      ${c.fundamentals&&c.fundamentals.values?`<span class="fr">${[['market_cap','Cap'],['pe','P/E'],['fwd_pe','Fwd P/E'],['ps','P/S'],['ev_ebitda','EV/EBITDA']].filter(([k])=>c.fundamentals.values[k]).map(([k,l])=>`<span>${l} <b>${esc(c.fundamentals.values[k])}</b></span>`).join('')}</span>`:''}
       <span class="cnt">${t} headline${t===1?'':'s'} today · ${week.length} this week · <span class="up">${week.filter(i=>i.score>0).length}</span>/<span class="down">${week.filter(i=>i.score<0).length}</span></span></button>`;}).join('');
   document.querySelectorAll('.co').forEach(b=>b.onclick=()=>selectTab(b.dataset.t));
   // cross-company top list: last 3 days, ranked by importance then recency
@@ -323,9 +342,20 @@ function show(c){
   document.getElementById('eyebrow').textContent = `${c.exchange}: ${c.ticker} · daily news log`;
   document.getElementById('h1').innerHTML = `${esc(c.name)} <span>Newsroom</span>`;
   document.getElementById('chart-title').textContent = `${c.ticker} share price and news volume, last 90 days`;
-  renderTiles(c); renderChart(c); buildFilters(c); render();
+  renderTiles(c); renderFunds(c); renderChart(c); buildFilters(c); render();
 }
 
+const FUND_LABELS=[['market_cap','Market cap','Total value of all shares'],['pe','P/E','Price / earnings per share, trailing 12 months'],['fwd_pe','Forward P/E','Price / expected earnings next fiscal year'],['peg','PEG','P/E divided by expected earnings growth'],['ps','P/S','Price / sales per share'],['pb','P/B','Price / book value per share'],['ev_ebitda','EV/EBITDA','Enterprise value / EBITDA'],['eps','EPS (ttm)','Earnings per share, trailing 12 months'],['revenue','Revenue (ttm)',''],['net_income','Net income (ttm)',''],['rev_growth','Revenue growth','Year over year, trailing 12 months'],['gross_margin','Gross margin',''],['oper_margin','Operating margin',''],['net_margin','Net margin',''],['roe','ROE','Return on equity'],['debt_equity','Debt / equity',''],['div_yield','Dividend yield',''],['beta','Beta','Volatility vs the market (1 = market)'],['range_52w','52-week range',''],['short_float','Short float','Share of float sold short'],['target','Analyst target',''],['earnings','Next earnings',''],['perf_year','1-year change','']];
+function fundClass(k,v){ if(!/^-?\d/.test(v)) return ''; if(['rev_growth','net_margin','oper_margin','gross_margin','roe','perf_year','eps','net_income'].includes(k)) return v.trim().startsWith('-')?'down':'up'; return ''; }
+function renderFunds(c){
+  const sec=document.getElementById('funds'), f=c.fundamentals;
+  if(!f||!f.values||!Object.keys(f.values).length){ sec.hidden=true; return; }
+  sec.hidden=false;
+  document.getElementById('funds-note').textContent=`${f.source} · as of ${fmtD.format(new Date(f.as_of))}`;
+  document.getElementById('fgrid').innerHTML=FUND_LABELS.filter(([k])=>f.values[k]).map(([k,l,tip])=>{
+    const v=f.values[k]; const small=v.length>10;
+    return `<div class="f" ${tip?`title="${esc(tip)}"`:''}><div class="k">${l}</div><div class="v ${fundClass(k,v)} ${small?'small':''}">${esc(v)}</div></div>`;}).join('');
+}
 function renderTiles(c){
   const {closes,last,dayPct,items} = c;
   const first = closes.length ? closes[0] : null;

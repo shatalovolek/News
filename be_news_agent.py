@@ -237,6 +237,95 @@ def fetch_price(ticker):
         return None
 
 
+# -------------------------------------------------------------------- fundamentals
+# Which figures to show, in this order: (our key, Finviz label, StockAnalysis label, kind)
+FUND_FIELDS = [
+    ("market_cap",  "Market Cap",     "Market Cap",             "money"),
+    ("pe",          "P/E",            "PE Ratio",               "x"),
+    ("fwd_pe",      "Forward P/E",    "Forward PE",             "x"),
+    ("peg",         "PEG",            "PEG Ratio",              "x"),
+    ("ps",          "P/S",            "PS Ratio",               "x"),
+    ("pb",          "P/B",            "PB Ratio",               "x"),
+    ("ev_ebitda",   "EV/EBITDA",      "EV / EBITDA",            "x"),
+    ("eps",         "EPS (ttm)",      "EPS (Diluted)",          "usd"),
+    ("revenue",     "Sales",          "Revenue",                "money"),
+    ("net_income",  "Income",         "Net Income",             "money"),
+    ("rev_growth",  "Sales Y/Y TTM",  "Revenue Growth (YoY)",   "pct"),
+    ("gross_margin","Gross Margin",   "Gross Margin",           "pct"),
+    ("oper_margin", "Oper. Margin",   "Operating Margin",       "pct"),
+    ("net_margin",  "Profit Margin",  "Profit Margin",          "pct"),
+    ("roe",         "ROE",            "Return on Equity (ROE)", "pct"),
+    ("debt_equity", "Debt/Eq",        "Debt / Equity",          "x"),
+    ("div_yield",   "Dividend TTM",   "Dividend Yield",         "text"),
+    ("beta",        "Beta",           "Beta (5Y)",              "x"),
+    ("range_52w",   "52W Range",      "52-Week Range",          "text"),
+    ("short_float", "Short Float",    "Short % of Float",       "pct"),
+    ("target",      "Target Price",   "Price Target",           "usd"),
+    ("earnings",    "Earnings",       "Earnings Date",          "text"),
+    ("perf_year",   "Perf Year",      "52-Week Price Change",   "pct"),
+]
+TAGS_RE = re.compile(r"<[^>]+>")
+
+
+def _strip(html):
+    return re.sub(r"\s+", " ", TAGS_RE.sub("", html)).replace("&amp;", "&").strip()
+
+
+def _finviz(ticker):
+    r = requests.get(f"https://finviz.com/quote.ashx?t={ticker}&p=d", headers=HEADERS, timeout=25)
+    r.raise_for_status()
+    pairs = re.findall(r'<div class="snapshot-td-label">(.*?)</div>.*?<div class="snapshot-td-content">(.*?)</div>', r.text, re.S)
+    table = {_strip(k): _strip(v) for k, v in pairs}
+    if "P/E" not in table:
+        raise ValueError("Finviz table not found")
+    out = {key: table.get(fl) for key, fl, _, _ in FUND_FIELDS}
+    lo, hi = table.get("52W Low", ""), table.get("52W High", "")   # "61.37 349.32%" -> first number
+    if lo and hi:
+        out["range_52w"] = f"{lo.split()[0]} - {hi.split()[0]}"
+    if out.get("div_yield"):  # Finviz: "0.00 (0.00%)" -> keep the percentage
+        m = re.search(r"\(([^)]*)\)", out["div_yield"])
+        out["div_yield"] = m.group(1) if m else out["div_yield"]
+    return out
+
+
+def _stockanalysis(ticker):
+    r = requests.get(f"https://stockanalysis.com/stocks/{ticker.lower()}/statistics/", headers=HEADERS, timeout=25)
+    r.raise_for_status()
+    html = re.sub(r"<!--.*?-->", "", r.text, flags=re.S)
+    rows = re.findall(r"<tr[^>]*>\s*<td[^>]*>(.*?)</td>\s*<td[^>]*>(.*?)</td>\s*</tr>", html, re.S)
+    table = {_strip(k): _strip(v) for k, v in rows}
+    if "PE Ratio" not in table:
+        raise ValueError("StockAnalysis table not found")
+    return {key: table.get(sl) for key, _, sl, _ in FUND_FIELDS}
+
+
+def fundamentals_file(ticker):
+    return os.path.join(OUT_DIR, f"fundamentals_{ticker}.json")
+
+
+def fetch_fundamentals(ticker):
+    """Valuation and quality figures as display strings. Finviz first, StockAnalysis second,
+    the last successful copy on disk third. Returns {"source":..., "as_of":..., "values":{...}}."""
+    for name, fn in (("Finviz", _finviz), ("StockAnalysis", _stockanalysis)):
+        try:
+            vals = fn(ticker)
+            vals = {k: v for k, v in vals.items() if v not in (None, "", "-", "- -", "n/a", "N/A")}
+            if vals:
+                data = {"source": name, "as_of": dt.datetime.now().astimezone().isoformat(),
+                        "values": vals}
+                os.makedirs(OUT_DIR, exist_ok=True)
+                with open(fundamentals_file(ticker), "w") as f:
+                    json.dump(data, f, indent=1)
+                return data
+        except Exception as e:  # noqa: BLE001
+            print(f"[warn] {name} fundamentals for {ticker} failed: {e}", file=sys.stderr)
+    try:
+        with open(fundamentals_file(ticker)) as f:
+            return json.load(f)
+    except Exception:  # noqa: BLE001
+        return None
+
+
 # ------------------------------------------------------------------------ render
 NAVY = (16, 28, 48)
 CARD = (255, 255, 255)
@@ -322,7 +411,7 @@ def sparkline(closes, w, h, up):
     return img
 
 
-def render(company, items, price, hours, out_path):
+def render(company, items, price, hours, out_path, fund=None):
     W, PAD = 1240, 40
     local_now = dt.datetime.now().astimezone()
     title_f, h1_f, body_f, small_f, big_f = font(38, True), font(24, True), font(22), font(17), font(46, True)
@@ -337,7 +426,7 @@ def render(company, items, price, hours, out_path):
         lines = wrap(scratch, it["title"], body_f, text_w)
         rows.append((it, lines))
     headline_h = sum(28 * len(l) + 34 for _, l in rows) or 60
-    H = 150 + 190 + 70 + headline_h + 90
+    H = 150 + 190 + 40 + 70 + headline_h + 90
 
     img = Image.new("RGB", (W, H), BG)
     d = ImageDraw.Draw(img)
@@ -370,8 +459,17 @@ def render(company, items, price, hours, out_path):
     else:
         d.text((PAD + 30, y + 60), "Price unavailable", font=h1_f, fill=MUTED)
 
+    # key ratios under the price card
+    y += 190
+    if fund and fund.get("values"):
+        v = fund["values"]
+        bits = [f"{lbl} {v[k]}" for k, lbl in (("market_cap", "Mkt cap"), ("pe", "P/E"), ("fwd_pe", "Fwd P/E"),
+                                                 ("ps", "P/S"), ("ev_ebitda", "EV/EBITDA"), ("net_margin", "Net margin"),
+                                                 ("rev_growth", "Rev growth"), ("earnings", "Earnings")) if v.get(k)]
+        d.text((PAD, y), plain("   -   ".join(bits)), font=font(18), fill=MUTED)
+    y += 10
+
     # sentiment summary
-    y += 200
     pos = sum(1 for i in items if i["score"] > 0)
     neg = sum(1 for i in items if i["score"] < 0)
     neu = len(items) - pos - neg
@@ -446,10 +544,18 @@ def build_page(companies, results):
         return None
     data = {"generated": dt.datetime.now().astimezone().isoformat(), "companies": []}
     for c in companies:
-        hist, price = results.get(c["ticker"], (load_history(c["ticker"]), None))
+        hist, price = results.get(c["ticker"], (load_history(c["ticker"]), None))[:2]
         hist = [h for h in hist if relevant(c, h["title"])]
+        fund = results.get(c["ticker"], (None, None, None))[2] if c["ticker"] in results else None
+        if fund is None:
+            try:
+                with open(fundamentals_file(c["ticker"])) as f:
+                    fund = json.load(f)
+            except Exception:  # noqa: BLE001
+                fund = None
         data["companies"].append({
             "ticker": c["ticker"], "name": c["name"], "exchange": c["exchange"],
+            "fundamentals": fund,
             "closes": (price or {}).get("series", []),
             "items": [{"title": h["title"], "link": h["link"], "source": h["source"],
                        "time": h["time"], "score": h["score"],
@@ -480,22 +586,23 @@ def run_all(hours=24, backfill=False, only=None, verbose=True, pictures=True):
             win = 72
             items = collect_news(c, win)
         price = fetch_price(c["ticker"])
+        fund = fetch_fundamentals(c["ticker"])
         if backfill or not os.path.exists(history_file(c["ticker"])):
             hist = update_history(c, collect_news(c, 24 * 30))   # first run: pull everything the feeds hold
         else:
             hist = update_history(c, items)
-        results[c["ticker"]] = (hist, price)
+        results[c["ticker"]] = (hist, price, fund)
 
         if pictures:
             png = os.path.join(OUT_DIR, f"{c['ticker']}_news_{day}.png")
-            render(c, items, price, win, png)
+            render(c, items, price, win, png, fund)
             Image.open(png).save(os.path.join(OUT_DIR, f"{c['ticker']}_latest.png"))
             with open(os.path.join(OUT_DIR, f"{c['ticker']}_news_{day}.json"), "w") as f:
                 json.dump({"generated": dt.datetime.now().astimezone().isoformat(), "hours": win,
                            "price": {k: v for k, v in (price or {}).items() if k not in ("closes", "series")},
                            "items": [{**i, "time": i["time"].isoformat()} for i in items]}, f, indent=2)
         if verbose:
-            print(f"{c['ticker']:6s} {len(items):3d} headlines today · {len(hist):4d} in history")
+            print(f"{c['ticker']:6s} {len(items):3d} headlines today · {len(hist):4d} in history · fundamentals: {fund['source'] if fund else 'none'}")
             for it in items[:5]:
                 print(f"    [{'+' if it['score'] > 0 else '-' if it['score'] < 0 else ' '}] {it['title'][:90]}  ({it['source']})")
         summary.append(f"{c['ticker']} {len(items)}")
