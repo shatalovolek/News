@@ -24,6 +24,7 @@ import re
 import subprocess
 import sys
 import textwrap
+import time
 import xml.etree.ElementTree as ET
 from email.utils import parsedate_to_datetime
 
@@ -48,11 +49,41 @@ def load_companies():
 
 def save_companies(companies):
     os.makedirs(OUT_DIR, exist_ok=True)
+    text = json.dumps(companies, indent=2, ensure_ascii=False) + "\n"
     with open(COMPANIES_FILE, "w") as f:
-        json.dump(companies, f, indent=2, ensure_ascii=False)
+        f.write(text)
     if os.path.abspath(COMPANIES_FILE) != os.path.abspath(COMPANIES_SEED) and OUT_DIR == os.path.join(HERE, "output"):
         with open(COMPANIES_SEED, "w") as f:   # keep the repo copy in sync when running locally
-            json.dump(companies, f, indent=2, ensure_ascii=False)
+            f.write(text)
+    github_save("companies.json", text, "Companies list updated from the site")
+
+
+def github_save(path, text, message):
+    """Commit a file to the GitHub repo so it survives Render's ephemeral disk.
+    Needs GITHUB_TOKEN (fine-grained token, Contents: read/write) and GITHUB_REPO (owner/name).
+    The commit message carries [skip render] so Render does not redeploy for it."""
+    token, repo = os.environ.get("GITHUB_TOKEN"), os.environ.get("GITHUB_REPO", "shatalovolek/News")
+    if not token:
+        return False
+    import base64
+    api = f"https://api.github.com/repos/{repo}/contents/{path}"
+    hdr = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json",
+           "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "stock-newsroom"}
+    try:
+        cur = requests.get(api, headers=hdr, timeout=20)
+        sha = cur.json().get("sha") if cur.status_code == 200 else None
+        if sha and base64.b64decode(cur.json().get("content", "")).decode() == text:
+            return True  # unchanged
+        body = {"message": f"[skip render] {message}", "content": base64.b64encode(text.encode()).decode()}
+        if sha:
+            body["sha"] = sha
+        r = requests.put(api, headers=hdr, json=body, timeout=30)
+        r.raise_for_status()
+        print(f"[info] {path} committed to {repo}", file=sys.stderr)
+        return True
+    except Exception as e:  # noqa: BLE001
+        print(f"[warn] GitHub save of {path} failed: {e}", file=sys.stderr)
+        return False
 
 
 def lookup_ticker(query):
@@ -212,8 +243,41 @@ def importance(it):
     return round(max(0, min(10, v)), 1)
 
 
-def fetch_price(ticker):
+def price_file(ticker):
+    return os.path.join(OUT_DIR, f"prices_{ticker}.json")
+
+
+def load_cached_price(ticker):
     try:
+        with open(price_file(ticker)) as f:
+            return json.load(f)
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def fetch_price(ticker):
+    """Price + series from Yahoo; on failure (rate limit, outage) the last good copy on disk."""
+    data = None
+    for attempt in range(3):
+        try:
+            data = _fetch_price_yahoo(ticker)
+            break
+        except Exception as e:  # noqa: BLE001
+            print(f"[warn] price fetch {ticker} attempt {attempt + 1} failed: {e}", file=sys.stderr)
+            time.sleep(2 * (attempt + 1))
+    if data:
+        os.makedirs(OUT_DIR, exist_ok=True)
+        with open(price_file(ticker), "w") as f:
+            json.dump(data, f)
+        return data
+    cached = load_cached_price(ticker)
+    if cached:
+        print(f"[warn] using cached prices for {ticker}", file=sys.stderr)
+    return cached
+
+
+def _fetch_price_yahoo(ticker):
+    if ticker:
         r = requests.get(chart_url(ticker), headers=HEADERS, timeout=25)
         r.raise_for_status()
         res = r.json()["chart"]["result"][0]
@@ -238,9 +302,6 @@ def fetch_price(ticker):
             "ytd_change_pct": ytd_pct,
             "currency": meta.get("currency", "USD"),
         }
-    except Exception as e:  # noqa: BLE001
-        print(f"[warn] price fetch failed: {e}", file=sys.stderr)
-        return None
 
 
 # -------------------------------------------------------------------- fundamentals
@@ -570,6 +631,8 @@ def build_page(companies, results):
     data = {"generated": dt.datetime.now().astimezone().isoformat(), "companies": []}
     for c in companies:
         hist, price = results.get(c["ticker"], (load_history(c["ticker"]), None))[:2]
+        if price is None:
+            price = load_cached_price(c["ticker"])
         hist = [h for h in hist if relevant(c, h["title"])]
         fund = results.get(c["ticker"], (None, None, None))[2] if c["ticker"] in results else None
         if fund is None:

@@ -79,9 +79,19 @@ the page is served by the Python service):
 
 Free-plan notes: the service sleeps after 15 minutes without visitors (first visit then
 takes ~1 minute to wake, after which it re-collects the news), and its disk is wiped on
-every deploy, so histories restart from what the feeds still hold (~30 days) and
-companies added from the page are lost. To keep them, attach a Render Disk
-(Settings → Disks, mount path `/data`, 1 GB) and set `DATA_DIR=/data` in `render.yaml`.
+every deploy, so histories restart from what the feeds still hold (~30 days).
+
+**Keeping companies added on the site.** Without persistence the list also resets to the
+repo's `companies.json` on every deploy. Free fix: let the server commit the list to GitHub.
+1. GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens →
+   Generate new token. Repository access: only `News`. Permissions: Contents → Read and write.
+2. Render → the service → Environment → Add environment variable: `GITHUB_TOKEN` = the token.
+   (`GITHUB_REPO` defaults to `shatalovolek/News`.) Save; Render restarts the service.
+From then on every add/remove on the site is committed to `companies.json` with
+`[skip render]` in the message, so it does not trigger a deploy, and the next deploy
+starts from the updated list. The add panel warns when persistence is off.
+Paid alternative: a Render Disk (Settings → Disks, mount `/data`) plus `DATA_DIR=/data`
+keeps histories and pictures as well.
 
 ## Sources
 Google News RSS (query "Bloom Energy" OR "NYSE:BE") and Yahoo Finance headline RSS,

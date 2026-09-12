@@ -12,6 +12,9 @@ Environment:
     PORT           port to listen on (Render sets it)
     DATA_DIR       where histories, pictures and companies.json live (mount a Render disk here)
     REFRESH_HOURS  how often to re-collect news while running (default 2)
+    GITHUB_TOKEN   fine-grained GitHub token (Contents: read/write on the repo). With it, companies
+                   added or removed on the site are committed to companies.json in the repo, so they
+                   survive Render's disk wipe on every deploy. GITHUB_REPO defaults to shatalovolek/News.
 
 Routes:
     GET  /                      the Newsroom page
@@ -103,7 +106,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, doc, "text/html; charset=utf-8")
         if path == "/api/health":
             return self._send(200, {"ok": True, "last_run": STATE["last_run"], "running": STATE["running"],
-                                    "last_error": STATE["last_error"], "companies": len(agent.load_companies())})
+                                    "last_error": STATE["last_error"], "companies": len(agent.load_companies()),
+                                    "persistent": bool(os.environ.get("GITHUB_TOKEN") or os.environ.get("DATA_DIR"))})
         if path == "/api/companies":
             return self._send(200, agent.load_companies())
         if path.startswith("/pictures/"):

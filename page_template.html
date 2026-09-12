@@ -316,10 +316,12 @@ function renderTracked(){
     addmsg.textContent=j.message||j.error; addmsg.className='msg'+(r.ok?'':' err'); if(r.ok) setTimeout(()=>location.reload(),1500);
   });
 }
-fetch('/api/health',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{API=!!(j&&j.ok); setup();}).catch(()=>{API=false; setup();});
+let PERSISTENT=true;
+fetch('/api/health',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{API=!!(j&&j.ok); PERSISTENT=!j||j.persistent!==false; setup();}).catch(()=>{API=false; setup();});
 function setup(){
   renderTracked();
   if(!API){ addmsg.innerHTML='This copy of the page is a snapshot, so it cannot add companies by itself. On the Mac (or on the server) run <code>python3 be_news_agent.py --add NVDA</code> and the next refresh will include it.'; }
+  else if(!PERSISTENT){ addmsg.innerHTML='Type a ticker or a name. <b>Note:</b> this server has no persistent storage yet, so companies added here are lost when the service is redeployed. Set GITHUB_TOKEN on Render to keep them.'; }
   else addmsg.textContent='Type a ticker or a name. The company is looked up, its news collected, and a tab appears after the page reloads.';
 }
 document.getElementById('addform').onsubmit=async e=>{
