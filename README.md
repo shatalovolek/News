@@ -59,7 +59,7 @@ and delete `~/Library/LaunchAgents/com.alexdrone.be-news-agent.plist`.
   `python3 be_news_agent.py --add NVDA` (or `--remove NVDA`).
 
 ## Running it as a website (news.beat-trade.com)
-`server.py` serves the page, refreshes the news every `REFRESH_HOURS` (default 3) and
+`server.py` serves the page, refreshes the news every `REFRESH_HOURS` (default 2) and
 provides the add/remove API. Locally:
 ```
 python3 server.py            # http://127.0.0.1:8030/

@@ -11,7 +11,7 @@ API so companies can be added or removed from the page.
 Environment:
     PORT           port to listen on (Render sets it)
     DATA_DIR       where histories, pictures and companies.json live (mount a Render disk here)
-    REFRESH_HOURS  how often to re-collect news while running (default 3)
+    REFRESH_HOURS  how often to re-collect news while running (default 2)
 
 Routes:
     GET  /                      the Newsroom page
@@ -153,7 +153,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=int(os.environ.get("PORT", 8030)))
-    ap.add_argument("--refresh-hours", type=float, default=float(os.environ.get("REFRESH_HOURS", 3)))
+    ap.add_argument("--refresh-hours", type=float, default=float(os.environ.get("REFRESH_HOURS", 2)))
     args = ap.parse_args()
     os.makedirs(agent.OUT_DIR, exist_ok=True)
     threading.Thread(target=scheduler, args=(args.refresh_hours,), daemon=True).start()

@@ -13,7 +13,7 @@ services:
       - key: PYTHON_VERSION
         value: "3.13.4"
       - key: REFRESH_HOURS
-        value: "3"
+        value: "2"
       - key: TZ                    # timestamps on the pictures and the page in the user's time zone
         value: Europe/Vienna
       # Uncomment when a Render Disk is attached (Settings → Disks, mount path /data)
