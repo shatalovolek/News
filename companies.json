@@ -1,0 +1,10 @@
+[
+  {"ticker": "BE",    "name": "Bloom Energy", "exchange": "NYSE",   "query": "\"Bloom Energy\" OR \"NYSE:BE\"",
+   "match": "Bloom Energy|Bloom's|NYSE:BE|\\$BE\\b|\\(BE\\)|\\bBE stock"},
+  {"ticker": "AMZN",  "name": "Amazon",       "exchange": "NASDAQ", "query": "Amazon AMZN OR \"Amazon.com\" OR AWS OR \"Amazon Web Services\"",
+   "match": "Amazon|AMZN|\\bAWS\\b|Bezos|Jassy"},
+  {"ticker": "GOOGL", "name": "Google",       "exchange": "NASDAQ", "query": "Google OR Alphabet GOOGL OR Waymo OR DeepMind",
+   "match": "Google|Alphabet|GOOGL|\\bGOOG\\b|Waymo|DeepMind|YouTube|Pichai|Gemini"},
+  {"ticker": "SNDK",  "name": "SanDisk",      "exchange": "NASDAQ", "query": "SanDisk OR \"NASDAQ:SNDK\"",
+   "match": "SanDisk|Sandisk|SNDK"}
+]

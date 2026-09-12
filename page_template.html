@@ -1,0 +1,408 @@
+<title>Daily Stock Newsroom</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F4F6F5;--surface:#FFFFFF;--ink:#16211D;--muted:#5E6E68;--line:#D9E0DD;--line-soft:#E8EDEB;
+  --accent:#0F6E56;--accent-soft:#DDEFE8;--pos:#1B8A5A;--neg:#C8433B;--neu:#8A9793;
+  --pos-soft:#E1F3EA;--neg-soft:#F9E4E2;--neu-soft:#ECEFEE;--chip:#EEF2F0;
+  --font-display:"IBM Plex Sans Condensed","Arial Narrow","Helvetica Neue",Arial,sans-serif;
+  --font-body:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
+  --font-mono:"IBM Plex Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0F1513;--surface:#182220;--ink:#E6EDEA;--muted:#93A39D;--line:#273431;--line-soft:#1F2B28;
+  --accent:#4FC39A;--accent-soft:#173A30;--pos:#46C283;--neg:#F0776D;--neu:#6F7F79;
+  --pos-soft:#173A2A;--neg-soft:#3F1F1C;--neu-soft:#232D2A;--chip:#212C29;}}
+:root[data-theme="dark"]{
+  --bg:#0F1513;--surface:#182220;--ink:#E6EDEA;--muted:#93A39D;--line:#273431;--line-soft:#1F2B28;
+  --accent:#4FC39A;--accent-soft:#173A30;--pos:#46C283;--neg:#F0776D;--neu:#6F7F79;
+  --pos-soft:#173A2A;--neg-soft:#3F1F1C;--neu-soft:#232D2A;--chip:#212C29;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5;
+  padding-inline:clamp(16px,4vw,48px);padding-block:0 64px}
+a{color:inherit}
+.wrap{max-width:1180px;margin:0 auto}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;padding-block:28px 20px;border-bottom:1px solid var(--line)}
+.eyebrow{font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--font-display);font-weight:700;font-size:clamp(30px,4.5vw,44px);line-height:1;margin:6px 0 0;letter-spacing:-.01em;text-wrap:balance}
+h1 span{color:var(--accent)}
+.updated{font-family:var(--font-mono);font-size:12px;color:var(--muted);text-align:right}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;margin-top:20px;border-bottom:2px solid var(--line)}
+.tab{font:inherit;background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-2px;padding:10px 14px 9px;cursor:pointer;color:var(--muted);display:flex;flex-direction:column;align-items:flex-start;gap:1px;min-width:120px;text-align:left}
+.tab .tk{font-family:var(--font-mono);font-size:12px;letter-spacing:.06em}
+.tab .nm{font-family:var(--font-display);font-size:17px;font-weight:600;color:var(--ink)}
+.tab .ch{font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums}
+.tab[aria-selected="true"]{border-bottom-color:var(--accent);color:var(--accent)}
+.tab[aria-selected="true"] .nm{color:var(--accent)}
+.tab:hover{background:var(--chip)}
+.tab:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-top:0}
+.tile{background:var(--surface);padding:14px 16px 12px}
+.tile .lbl{font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.tile .val{font-family:var(--font-display);font-weight:600;font-size:30px;line-height:1.1;margin-top:4px;font-variant-numeric:tabular-nums}
+.tile .sub{font-size:12px;color:var(--muted);margin-top:2px}
+.up{color:var(--pos)}.down{color:var(--neg)}
+section.chart{background:var(--surface);border:1px solid var(--line);border-top:0;padding:16px 16px 8px;position:relative}
+.chart-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px}
+.chart-head h2{font-family:var(--font-display);font-size:18px;font-weight:600;margin:0}
+.legend{display:flex;gap:16px;font-size:12px;color:var(--muted);font-family:var(--font-mono)}
+.legend i{display:inline-block;width:14px;height:3px;background:var(--accent);vertical-align:middle;margin-right:6px;border-radius:2px}
+.legend i.bar{height:10px;width:8px;background:var(--neu);opacity:.7}
+svg.price{width:100%;height:auto;display:block;overflow:visible}
+svg text{font-family:var(--font-mono);font-size:11px;fill:var(--muted)}
+.grid line{stroke:var(--line-soft);stroke-width:1}
+.axis line{stroke:var(--line);stroke-width:1}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);font-family:var(--font-mono);font-size:12px;padding:6px 8px;border-radius:3px;white-space:nowrap;transform:translate(-50%,-110%);opacity:0;transition:opacity .1s}
+.tip b{font-weight:500}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:28px 0 8px;position:sticky;top:0;background:var(--bg);padding-block:10px;z-index:2;border-bottom:1px solid var(--line)}
+.controls input,.controls select{font:inherit;font-size:14px;color:var(--ink);background:var(--surface);border:1px solid var(--line);padding:7px 10px;border-radius:3px;min-width:0}
+.controls input{flex:1 1 220px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font:inherit;font-size:13px;padding:6px 11px;border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip .n{font-family:var(--font-mono);font-size:12px;color:inherit;opacity:.7;margin-left:4px}
+.chip:focus-visible,.controls input:focus-visible,.controls select:focus-visible,.item a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.count{font-family:var(--font-mono);font-size:12px;color:var(--muted);margin-left:auto}
+.day{display:grid;grid-template-columns:150px 1fr;gap:0 24px;border-bottom:1px solid var(--line);padding-block:20px}
+.day-head{position:sticky;top:70px;align-self:start}
+.day-head .d{font-family:var(--font-display);font-size:22px;font-weight:600;line-height:1.1}
+.day-head .w{font-family:var(--font-mono);font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+.day-head .p{font-family:var(--font-mono);font-size:12px;margin-top:8px;color:var(--muted);font-variant-numeric:tabular-nums}
+.day-head .p b{font-weight:500;color:var(--ink)}
+.items{display:flex;flex-direction:column;gap:2px}
+.item{display:grid;grid-template-columns:52px 4px 1fr;gap:0 12px;padding:9px 0;align-items:start}
+.item .t{font-family:var(--font-mono);font-size:12px;color:var(--muted);padding-top:3px;font-variant-numeric:tabular-nums}
+.item .s{width:4px;border-radius:2px;align-self:stretch;background:var(--neu)}
+.item.pos .s{background:var(--pos)}.item.neg .s{background:var(--neg)}
+.item h3{margin:0;font-size:16px;font-weight:500;line-height:1.35;text-wrap:pretty}
+.item h3 a{text-decoration:none}.item h3 a:hover{text-decoration:underline;text-decoration-color:var(--accent)}
+.item .m{font-size:12px;color:var(--muted);margin-top:3px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.tag{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;padding:1px 6px;border-radius:2px;background:var(--neu-soft);color:var(--muted)}
+.tag.pos{background:var(--pos-soft);color:var(--pos)}.tag.neg{background:var(--neg-soft);color:var(--neg)}
+.empty{padding:40px 0;color:var(--muted);text-align:center}
+footer{margin-top:28px;font-size:12px;color:var(--muted);line-height:1.6;max-width:70ch}
+/* summary view */
+.overview{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin-top:20px}
+.co{background:var(--surface);border:1px solid var(--line);padding:14px 16px;cursor:pointer;text-align:left;font:inherit;color:inherit;display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:end}
+.co:hover{border-color:var(--accent)}.co:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.co .nm{font-family:var(--font-display);font-size:19px;font-weight:600;grid-column:1/-1;line-height:1.1}
+.co .tk{font-family:var(--font-mono);font-size:11px;color:var(--muted);letter-spacing:.06em;grid-column:1/-1}
+.co .px{font-family:var(--font-display);font-size:24px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1}
+.co .dc{font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums}
+.co svg{width:96px;height:32px;grid-row:3/5;justify-self:end}
+.co .cnt{font-size:12px;color:var(--muted);grid-column:1/-1;margin-top:6px}
+h2.sec{font-family:var(--font-display);font-size:20px;font-weight:600;margin:32px 0 4px;display:flex;align-items:baseline;gap:12px}
+h2.sec small{font-family:var(--font-mono);font-size:12px;color:var(--muted);font-weight:400;letter-spacing:.04em}
+.top{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.top .item{grid-template-columns:auto 4px 1fr;border-bottom:1px solid var(--line-soft);padding:10px 0}
+.top .when{font-family:var(--font-mono);font-size:12px;color:var(--muted);width:82px;padding-top:3px;font-variant-numeric:tabular-nums}
+.cob{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.05em;padding:1px 6px;border-radius:2px;background:var(--accent-soft);color:var(--accent);cursor:pointer;border:0}
+.cob:hover{text-decoration:underline}
+.imp{display:inline-flex;gap:2px;margin-left:auto}.imp i{width:5px;height:9px;background:var(--line);border-radius:1px}.imp i.on{background:var(--accent)}
+.percos{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px 28px;margin-top:8px}
+.perco h3{font-family:var(--font-display);font-size:16px;font-weight:600;margin:0 0 4px;display:flex;justify-content:space-between;align-items:baseline}
+.perco h3 span{font-family:var(--font-mono);font-size:11px;color:var(--muted);font-weight:400}
+.perco ul{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.perco li{padding:8px 0;border-bottom:1px solid var(--line-soft);font-size:14px;line-height:1.35;display:grid;grid-template-columns:4px 1fr;gap:10px}
+.perco li .s{background:var(--neu);border-radius:2px}.perco li.pos .s{background:var(--pos)}.perco li.neg .s{background:var(--neg)}
+.perco li a{text-decoration:none}.perco li a:hover{text-decoration:underline}
+.perco li .m{font-size:11.5px;color:var(--muted);font-family:var(--font-mono);margin-top:2px}
+/* add company */
+.tab.add{min-width:0;color:var(--accent);justify-content:center;margin-left:auto}
+.tab.add .nm{color:var(--accent);font-size:15px}
+.addpanel{background:var(--surface);border:1px solid var(--line);border-top:0;padding:16px;display:grid;gap:12px}
+.addpanel form{display:flex;gap:8px;flex-wrap:wrap}
+.addpanel input{font:inherit;font-size:15px;padding:8px 10px;border:1px solid var(--line);border-radius:3px;background:var(--bg);color:var(--ink);flex:1 1 220px}
+.btn{font:inherit;font-size:14px;font-weight:500;padding:8px 14px;border-radius:3px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer}
+.btn.ghost{background:none;color:var(--accent)}
+.btn:disabled{opacity:.6;cursor:default}
+.addpanel .msg{font-size:13px;color:var(--muted)}.addpanel .msg.err{color:var(--neg)}
+.addpanel code{font-family:var(--font-mono);font-size:12.5px;background:var(--chip);padding:2px 6px;border-radius:2px}
+.tracked{display:flex;flex-wrap:wrap;gap:6px}
+.tracked .chip{display:inline-flex;gap:8px;align-items:center}
+.tracked .chip b{font-weight:500}.tracked .chip button{border:0;background:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:0}
+.tracked .chip button:hover{color:var(--neg)}
+@media (max-width:640px){
+  .day{grid-template-columns:1fr;gap:10px}.day-head{position:static}
+  .item{grid-template-columns:44px 4px 1fr}.updated{text-align:left}
+}
+@media (prefers-reduced-motion:reduce){.tip{transition:none}}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div>
+    <div class="eyebrow" id="eyebrow">daily news log</div>
+    <h1 id="h1">Daily Stock <span>Newsroom</span></h1>
+  </div>
+  <div class="updated" id="updated"></div>
+</header>
+
+<div class="tabs" id="tabs" role="tablist" aria-label="Companies"></div>
+
+<div class="addpanel" id="addpanel" hidden>
+  <form id="addform"><input id="addq" type="text" placeholder="Ticker or company name, e.g. NVDA or Tesla" aria-label="Ticker or company name" autocomplete="off"><button class="btn" id="addbtn" type="submit">Track it</button><button class="btn ghost" type="button" id="addclose">Close</button></form>
+  <div class="msg" id="addmsg"></div>
+  <div class="tracked" id="tracked"></div>
+</div>
+
+<div id="summary-view" hidden>
+  <div class="overview" id="overview"></div>
+  <h2 class="sec">Most important news <small id="topnote"></small></h2>
+  <div class="top" id="topnews"></div>
+  <h2 class="sec">Company by company <small>top stories, last 3 days</small></h2>
+  <div class="percos" id="percos"></div>
+</div>
+
+<div id="company-view">
+<div class="tiles" id="tiles"></div>
+<section class="chart">
+  <div class="chart-head"><h2 id="chart-title">Share price and news volume, last 90 days</h2>
+    <div class="legend"><span><i></i>close (USD)</span><span><i class="bar"></i>headlines per day</span></div></div>
+  <svg class="price" id="chart" viewBox="0 0 1100 300" role="img" aria-label="BE closing price line with daily headline counts"></svg>
+  <div class="tip" id="tip"></div>
+</section>
+
+<div class="controls">
+  <input id="q" type="search" placeholder="Search headlines…" aria-label="Search headlines">
+  <div class="chips" id="chips" role="group" aria-label="Filter by tone"></div>
+  <select id="src" aria-label="Filter by source"><option value="">All sources</option></select>
+  <span class="count" id="count"></span>
+</div>
+<div id="timeline"></div>
+</div>
+
+<footer>Sources: Google News and Yahoo Finance RSS, de-duplicated, collected several times a day for every tracked company. "Most important" ranks headlines by a heuristic: real events (earnings, deals, lawsuits, launches) from major outlets score high; holdings filings, listicles and stock-tip pieces score low. Tone tags come from a keyword heuristic on the headline and are a reading aid, not investment advice. Times are shown in your local time zone.</footer>
+</div>
+
+<script id="data" type="application/json">__DATA__</script>
+<script>
+const DATA = JSON.parse(document.getElementById('data').textContent);
+const fmtD = new Intl.DateTimeFormat(undefined,{day:'numeric',month:'short'});
+const fmtW = new Intl.DateTimeFormat(undefined,{weekday:'long'});
+const fmtT = new Intl.DateTimeFormat(undefined,{hour:'2-digit',minute:'2-digit'});
+const fmtFull = new Intl.DateTimeFormat(undefined,{day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+const dayKey = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const tone = i => i.score>0?'pos':i.score<0?'neg':'neu';
+const toneName = {pos:'Positive',neg:'Negative',neu:'Neutral'};
+const pct = v => v==null?'—':(v>=0?'+':'')+v.toFixed(2)+'%';
+const cls = v => v==null?'':v>=0?'up':'down';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+document.getElementById('updated').textContent = 'updated ' + fmtFull.format(new Date(DATA.generated));
+
+const companies = DATA.companies.map(c => {
+  const closes = c.closes || [];
+  const last = closes.length ? closes[closes.length-1] : null;
+  const prev = closes.length>1 ? closes[closes.length-2] : null;
+  return {...c, closes, last, prev, dayPct: last&&prev ? (last.c-prev.c)/prev.c*100 : null,
+          items: c.items.map(i=>({...i, d:new Date(i.time)})).sort((a,b)=>b.d-a.d)};
+});
+
+// ---- tabs (Summary first, then one per company, then "+ Add")
+const tabs = document.getElementById('tabs');
+const SUMMARY = 'SUMMARY';
+let current = null;
+try { current = localStorage.getItem('newsroom.tab'); } catch(e) {}
+if (current !== SUMMARY && !companies.some(c=>c.ticker===current)) current = SUMMARY;
+function selectTab(id){
+  current = id; try{localStorage.setItem('newsroom.tab',current);}catch(e){}
+  tabs.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected', t.id==='tab-'+current));
+  if (id===SUMMARY) showSummary(); else show(companies.find(c=>c.ticker===id));
+  window.scrollTo({top:0});
+}
+function makeTab(id, html, cl){
+  const b=document.createElement('button'); b.className='tab'+(cl?' '+cl:''); b.role='tab'; b.id='tab-'+id;
+  b.setAttribute('aria-selected', id===current); b.innerHTML=html; tabs.appendChild(b); return b;
+}
+makeTab(SUMMARY, `<span class="tk">ALL</span><span class="nm">Summary</span><span class="ch">${companies.length} compan${companies.length===1?'y':'ies'}</span>`).onclick=()=>selectTab(SUMMARY);
+companies.forEach(c => {
+  makeTab(c.ticker, `<span class="tk">${esc(c.exchange)}: ${esc(c.ticker)}</span><span class="nm">${esc(c.name)}</span><span class="ch ${cls(c.dayPct)}">${c.last?'$'+c.last.c.toFixed(2)+' · '+pct(c.dayPct):'no price'}</span>`).onclick=()=>selectTab(c.ticker);
+});
+const addTab = makeTab('ADD', `<span class="nm">+ Add company</span>`, 'add');
+addTab.setAttribute('aria-selected','false');
+const addpanel=document.getElementById('addpanel');
+addTab.onclick=()=>{ addpanel.hidden=!addpanel.hidden; if(!addpanel.hidden) document.getElementById('addq').focus(); };
+document.getElementById('addclose').onclick=()=>{addpanel.hidden=true;};
+
+// ---- summary view
+const summaryView=document.getElementById('summary-view'), companyView=document.getElementById('company-view');
+function spark(closes){
+  const pts=closes.slice(-30); if(pts.length<2) return '';
+  const lo=Math.min(...pts.map(p=>p.c)), hi=Math.max(...pts.map(p=>p.c)), sp=(hi-lo)||1;
+  const up=pts[pts.length-1].c>=pts[0].c;
+  const d=pts.map((p,i)=>`${(i/(pts.length-1)*94+1).toFixed(1)},${(30-(p.c-lo)/sp*26-2).toFixed(1)}`).join(' ');
+  return `<svg viewBox="0 0 96 32" aria-hidden="true"><polyline points="${d}" fill="none" stroke="var(--${up?'pos':'neg'})" stroke-width="1.5"/></svg>`;
+}
+function showSummary(){
+  companyView.hidden=true; summaryView.hidden=false;
+  document.getElementById('eyebrow').textContent=`${companies.length} companies · daily news log`;
+  document.getElementById('h1').innerHTML=`Daily Stock <span>Newsroom</span>`;
+  const today=dayKey(new Date()), now=Date.now();
+  document.getElementById('overview').innerHTML=companies.map(c=>{
+    const week=c.items.filter(i=>now-i.d<7*864e5), t=c.items.filter(i=>dayKey(i.d)===today).length;
+    return `<button class="co" data-t="${esc(c.ticker)}"><span class="nm">${esc(c.name)}</span><span class="tk">${esc(c.exchange)}: ${esc(c.ticker)}</span>
+      <span class="px">${c.last?'$'+c.last.c.toFixed(2):'—'}</span>${spark(c.closes)}<span class="dc ${cls(c.dayPct)}">${pct(c.dayPct)} today</span>
+      <span class="cnt">${t} headline${t===1?'':'s'} today · ${week.length} this week · <span class="up">${week.filter(i=>i.score>0).length}</span>/<span class="down">${week.filter(i=>i.score<0).length}</span></span></button>`;}).join('');
+  document.querySelectorAll('.co').forEach(b=>b.onclick=()=>selectTab(b.dataset.t));
+  // cross-company top list: last 3 days, ranked by importance then recency
+  let win=3*864e5, all=[]; companies.forEach(c=>c.items.forEach(i=>all.push({...i,co:c})));
+  let pool=all.filter(i=>now-i.d<win); if(pool.length<8){win=7*864e5;pool=all.filter(i=>now-i.d<win);}
+  pool.sort((a,b)=>(b.importance-a.importance)||(b.d-a.d));
+  const top=pool.slice(0,12);
+  document.getElementById('topnote').textContent=`last ${Math.round(win/864e5)} days · ${pool.length} headlines ranked`;
+  document.getElementById('topnews').innerHTML=top.length?top.map(i=>{const t=tone(i);
+    return `<article class="item ${t}"><div class="when">${fmtD.format(i.d)}<br>${fmtT.format(i.d)}</div><div class="s"></div><div>
+      <h3><a href="${esc(i.link)}" target="_blank" rel="noopener">${esc(i.title)}</a></h3>
+      <div class="m"><button class="cob" data-t="${esc(i.co.ticker)}">${esc(i.co.name)}</button><span>${esc(i.source)}</span>${t!=='neu'?`<span class="tag ${t}">${toneName[t]}</span>`:''}
+      <span class="imp" title="importance ${i.importance}/10">${[2,4,6,8].map(k=>`<i class="${i.importance>=k?'on':''}"></i>`).join('')}</span></div></div></article>`;}).join('')
+    :'<div class="empty">No headlines yet.</div>';
+  document.querySelectorAll('.cob').forEach(b=>b.onclick=()=>selectTab(b.dataset.t));
+  document.getElementById('percos').innerHTML=companies.map(c=>{
+    let p=c.items.filter(i=>now-i.d<3*864e5); if(p.length<3) p=c.items.filter(i=>now-i.d<7*864e5);
+    p=[...p].sort((a,b)=>(b.importance-a.importance)||(b.d-a.d)).slice(0,3);
+    return `<div class="perco"><h3>${esc(c.name)}<span>${c.last?'$'+c.last.c.toFixed(2)+' · '+pct(c.dayPct):''}</span></h3><ul>${p.length?p.map(i=>`<li class="${tone(i)}"><span class="s"></span><div><a href="${esc(i.link)}" target="_blank" rel="noopener">${esc(i.title)}</a><div class="m">${esc(i.source)} · ${fmtD.format(i.d)}</div></div></li>`).join(''):'<li><span class="s"></span><span style="color:var(--muted)">Nothing this week.</span></li>'}</ul></div>`;}).join('');
+}
+
+// ---- add / remove companies (works when served by server.py; otherwise shows the command to run)
+let API=false;
+const addmsg=document.getElementById('addmsg'), tracked=document.getElementById('tracked');
+function renderTracked(){
+  tracked.innerHTML=companies.map(c=>`<span class="chip"><b>${esc(c.ticker)}</b> ${esc(c.name)}${API?`<button title="Stop tracking ${esc(c.name)}" data-t="${esc(c.ticker)}" aria-label="Stop tracking ${esc(c.name)}">✕</button>`:''}</span>`).join('');
+  tracked.querySelectorAll('button').forEach(b=>b.onclick=async()=>{
+    if(!confirm(`Stop tracking ${b.dataset.t}?`)) return;
+    const r=await fetch('/api/companies/'+b.dataset.t,{method:'DELETE'}); const j=await r.json();
+    addmsg.textContent=j.message||j.error; addmsg.className='msg'+(r.ok?'':' err'); if(r.ok) setTimeout(()=>location.reload(),1500);
+  });
+}
+fetch('/api/health',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{API=!!(j&&j.ok); setup();}).catch(()=>{API=false; setup();});
+function setup(){
+  renderTracked();
+  if(!API){ addmsg.innerHTML='This copy of the page is a snapshot, so it cannot add companies by itself. On the Mac (or on the server) run <code>python3 be_news_agent.py --add NVDA</code> and the next refresh will include it.'; }
+  else addmsg.textContent='Type a ticker or a name. The company is looked up, its news collected, and a tab appears after the page reloads.';
+}
+document.getElementById('addform').onsubmit=async e=>{
+  e.preventDefault(); const q=document.getElementById('addq').value.trim(); if(!q) return;
+  if(!API){ addmsg.innerHTML=`Run this on the Mac or server: <code>python3 be_news_agent.py --add ${esc(q)}</code>`; return; }
+  const btn=document.getElementById('addbtn'); btn.disabled=true; addmsg.className='msg'; addmsg.textContent='Looking up '+q+'…';
+  try{
+    const r=await fetch('/api/companies',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:q})});
+    const j=await r.json(); addmsg.textContent=j.message||j.error; addmsg.className='msg'+(r.ok?'':' err');
+    if(r.status===201){ let n=35; const t=setInterval(()=>{n--; addmsg.textContent=j.message.replace(/~\d+ seconds/,`~${n} seconds`); if(n<=0){clearInterval(t);location.reload();}},1000); }
+  }catch(err){ addmsg.textContent='Could not reach the server: '+err; addmsg.className='msg err'; }
+  btn.disabled=false;
+};
+
+const state={q:'',tone:'all',src:''};
+let active = null;
+
+function show(c){
+  summaryView.hidden=true; companyView.hidden=false;
+  active = c; state.q=''; state.tone='all'; state.src='';
+  document.getElementById('q').value='';
+  document.getElementById('eyebrow').textContent = `${c.exchange}: ${c.ticker} · daily news log`;
+  document.getElementById('h1').innerHTML = `${esc(c.name)} <span>Newsroom</span>`;
+  document.getElementById('chart-title').textContent = `${c.ticker} share price and news volume, last 90 days`;
+  renderTiles(c); renderChart(c); buildFilters(c); render();
+}
+
+function renderTiles(c){
+  const {closes,last,dayPct,items} = c;
+  const first = closes.length ? closes[0] : null;
+  const rangePct = last&&first ? (last.c-first.c)/first.c*100 : null;
+  const hi = closes.length?Math.max(...closes.map(x=>x.c)):0, lo = closes.length?Math.min(...closes.map(x=>x.c)):0;
+  const today = dayKey(new Date());
+  const todayN = items.filter(i=>dayKey(i.d)===today).length;
+  const week = items.filter(i=>(Date.now()-i.d) < 7*864e5);
+  document.getElementById('tiles').innerHTML = `
+  <div class="tile"><div class="lbl">Last close</div><div class="val">${last?'$'+last.c.toFixed(2):'—'}</div><div class="sub">${last?fmtD.format(new Date(last.t)):''}</div></div>
+  <div class="tile"><div class="lbl">Day change</div><div class="val ${cls(dayPct)}">${pct(dayPct)}</div><div class="sub">vs previous close</div></div>
+  <div class="tile"><div class="lbl">90-day change</div><div class="val ${cls(rangePct)}">${pct(rangePct)}</div><div class="sub">range $${lo.toFixed(0)}–$${hi.toFixed(0)}</div></div>
+  <div class="tile"><div class="lbl">Headlines today</div><div class="val">${todayN}</div><div class="sub">${week.length} in the last 7 days</div></div>
+  <div class="tile"><div class="lbl">Tone, 7 days</div><div class="val"><span class="up">${week.filter(i=>i.score>0).length}</span> <span style="color:var(--muted);font-size:20px">/</span> <span class="down">${week.filter(i=>i.score<0).length}</span></div><div class="sub">positive / negative</div></div>`;
+}
+
+// ---- chart: price line (top) + headline bars (bottom), one shared time axis
+function renderChart(c){
+  const svg = document.getElementById('chart'), tip=document.getElementById('tip');
+  const {closes,last,items} = c;
+  if(!closes.length){ svg.innerHTML=`<text x="550" y="150" text-anchor="middle">No price data</text>`; return; }
+  const hi = Math.max(...closes.map(x=>x.c)), lo = Math.min(...closes.map(x=>x.c));
+  const W=1100,H=300,L=56,R=16,T=14,B=28, priceH=170, gapH=14, barTop=T+priceH+gapH, barH=H-B-barTop;
+  const t0=closes[0].t, t1=closes[closes.length-1].t;
+  const x = t => L + (t-t0)/(t1-t0||1)*(W-L-R);
+  const pad=(hi-lo)*0.08 || 1; const y = v => T + (1-(v-lo+pad)/(hi-lo+2*pad))*priceH;
+  const counts={}; items.forEach(i=>{const k=dayKey(i.d); counts[k]=(counts[k]||0)+1;});
+  const days=[]; for(let t=t0;t<=t1+864e5;t+=864e5){const k=dayKey(new Date(t)); days.push({t,k,n:counts[k]||0});}
+  const maxN=Math.max(1,...days.map(d=>d.n));
+  const by = n => barTop + barH - n/maxN*barH;
+  const s = v => Number(v.toFixed(1));
+  let out='<g class="grid">';
+  const ticks=5; for(let i=0;i<=ticks;i++){const v=lo-pad+(hi-lo+2*pad)*i/ticks; out+=`<line x1="${L}" x2="${W-R}" y1="${s(y(v))}" y2="${s(y(v))}"/><text x="${L-8}" y="${s(y(v))+4}" text-anchor="end">${v.toFixed(0)}</text>`;}
+  out+='</g><g class="axis">';
+  const months={}; closes.forEach(p=>{const d=new Date(p.t); const m=d.getFullYear()+'-'+d.getMonth(); if(!months[m]) months[m]=p.t;});
+  Object.values(months).forEach(t=>{out+=`<line x1="${s(x(t))}" x2="${s(x(t))}" y1="${H-B}" y2="${H-B+4}"/><text x="${s(x(t))}" y="${H-B+18}" text-anchor="middle">${new Intl.DateTimeFormat(undefined,{month:'short'}).format(new Date(t))}</text>`;});
+  out+=`<line x1="${L}" x2="${W-R}" y1="${H-B}" y2="${H-B}"/><text x="${L-8}" y="${barTop+10}" text-anchor="end">${maxN}</text><text x="${L-8}" y="${barTop+barH}" text-anchor="end">0</text></g>`;
+  const dayW=(W-L-R)/Math.max(1,days.length);
+  out+='<g>'; days.forEach(d=>{ if(!d.n) return; out+=`<rect x="${s(x(d.t)-dayW/2+1)}" y="${s(by(d.n))}" width="${s(Math.max(2,dayW-2))}" height="${s(barTop+barH-by(d.n))}" fill="var(--neu)" opacity=".55" rx="1"/>`;}); out+='</g>';
+  const pts=closes.map(p=>`${s(x(p.t))},${s(y(p.c))}`).join(' ');
+  out+=`<polygon points="${s(x(closes[0].t))},${T+priceH} ${pts} ${s(x(t1))},${T+priceH}" fill="var(--accent)" opacity=".10"/>`;
+  out+=`<polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  out+=`<circle cx="${s(x(t1))}" cy="${s(y(last.c))}" r="4.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/>`;
+  out+=`<text x="${s(x(t1))-8}" y="${s(y(last.c))-10}" text-anchor="end" style="fill:var(--ink);font-weight:500">$${last.c.toFixed(2)}</text>`;
+  out+=`<g id="cross" style="display:none"><line id="cx" y1="${T}" y2="${H-B}" stroke="var(--muted)" stroke-dasharray="3 3"/><circle id="cp" r="5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/></g>`;
+  out+=`<rect id="hit" x="${L}" y="${T}" width="${W-L-R}" height="${H-B-T}" fill="transparent"/>`;
+  svg.innerHTML=out;
+  const cross=svg.querySelector('#cross'), hit=svg.querySelector('#hit');
+  hit.addEventListener('mousemove',e=>{
+    const r=svg.getBoundingClientRect(); const mx=(e.clientX-r.left)/r.width*W;
+    let best=closes[0]; for(const p of closes){ if(Math.abs(x(p.t)-mx)<Math.abs(x(best.t)-mx)) best=p; }
+    const k=dayKey(new Date(best.t)); const n=counts[k]||0;
+    cross.style.display='';
+    svg.querySelector('#cx').setAttribute('x1',x(best.t)); svg.querySelector('#cx').setAttribute('x2',x(best.t));
+    svg.querySelector('#cp').setAttribute('cx',x(best.t)); svg.querySelector('#cp').setAttribute('cy',y(best.c));
+    tip.innerHTML=`${fmtD.format(new Date(best.t))} · <b>$${best.c.toFixed(2)}</b> · ${n} headline${n===1?'':'s'}`;
+    tip.style.left=(x(best.t)/W*r.width)+'px'; tip.style.top=(y(best.c)/H*r.height)+'px'; tip.style.opacity=1;
+  });
+  hit.addEventListener('mouseleave',()=>{tip.style.opacity=0; cross.style.display='none';});
+}
+
+// ---- filters + timeline
+const srcSel=document.getElementById('src'), chips=document.getElementById('chips');
+document.getElementById('q').addEventListener('input',e=>{state.q=e.target.value.trim().toLowerCase();render();});
+srcSel.addEventListener('change',e=>{state.src=e.target.value;render();});
+function buildFilters(c){
+  srcSel.innerHTML='<option value="">All sources</option>';
+  [...new Set(c.items.map(i=>i.source))].sort((a,b)=>a.localeCompare(b)).forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;srcSel.appendChild(o);});
+  chips.innerHTML='';
+  [['all','All'],['pos','Positive'],['neg','Negative'],['neu','Neutral']].forEach(([k,l])=>{
+    const b=document.createElement('button');b.className='chip';b.id='chip-'+k;b.dataset.k=k;
+    b.setAttribute('aria-pressed',k==='all');const n=k==='all'?c.items.length:c.items.filter(i=>tone(i)===k).length;
+    b.innerHTML=`${l}<span class="n">${n}</span>`;
+    b.onclick=()=>{state.tone=k;chips.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed',x.dataset.k===k));render();};
+    chips.appendChild(b);});
+}
+function render(){
+  const items=active.items;
+  const closeByDay={}; active.closes.forEach(p=>closeByDay[dayKey(new Date(p.t))]=p.c);
+  const list=items.filter(i=>(state.tone==='all'||tone(i)===state.tone)&&(!state.src||i.source===state.src)&&(!state.q||i.title.toLowerCase().includes(state.q)||i.source.toLowerCase().includes(state.q)));
+  document.getElementById('count').textContent=`${list.length} of ${items.length} headlines`;
+  const groups=new Map(); list.forEach(i=>{const k=dayKey(i.d); if(!groups.has(k)) groups.set(k,[]); groups.get(k).push(i);});
+  const tl=document.getElementById('timeline');
+  if(!list.length){tl.innerHTML='<div class="empty">No headlines match these filters.</div>';return;}
+  let html='';
+  for(const [k,arr] of groups){
+    const d=arr[0].d; const c=closeByDay[k];
+    const p=arr.filter(i=>i.score>0).length, n=arr.filter(i=>i.score<0).length;
+    html+=`<section class="day"><div class="day-head"><div class="d">${fmtD.format(d)}</div><div class="w">${fmtW.format(d)}</div>
+      <div class="p">${arr.length} headline${arr.length===1?'':'s'}${(p||n)?` · <span class="up">${p}</span>/<span class="down">${n}</span>`:''}${c?`<br>close <b>$${c.toFixed(2)}</b>`:''}</div></div><div class="items">`;
+    arr.forEach(i=>{const t=tone(i);
+      html+=`<article class="item ${t}"><div class="t">${fmtT.format(i.d)}</div><div class="s"></div><div>
+        <h3><a href="${esc(i.link)}" target="_blank" rel="noopener">${esc(i.title)}</a></h3>
+        <div class="m"><span>${esc(i.source)}</span>${t!=='neu'?`<span class="tag ${t}">${toneName[t]}</span>`:''}</div></div></article>`;});
+    html+='</div></section>';
+  }
+  tl.innerHTML=html;
+}
+if (current===SUMMARY || !companies.length) showSummary(); else show(companies.find(c=>c.ticker===current));
+</script>

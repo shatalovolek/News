@@ -1,0 +1,20 @@
+# Render Blueprint for news.beat-trade.com — one long-running Python web service
+# (same pattern as the poker backend, but here it also serves the page itself).
+services:
+  - type: web
+    name: stock-newsroom
+    runtime: python
+    plan: free                    # free: sleeps after 15 min idle, disk is wiped on every deploy
+    region: frankfurt
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python server.py --host 0.0.0.0"
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13.4"
+      - key: REFRESH_HOURS
+        value: "3"
+      # Uncomment when a Render Disk is attached (Settings → Disks, mount path /data)
+      # so histories and companies added from the page survive restarts and deploys:
+      # - key: DATA_DIR
+      #   value: /data
