@@ -426,7 +426,7 @@ def render(company, items, price, hours, out_path, fund=None):
         lines = wrap(scratch, it["title"], body_f, text_w)
         rows.append((it, lines))
     headline_h = sum(28 * len(l) + 34 for _, l in rows) or 60
-    H = 150 + 190 + 40 + 70 + headline_h + 90
+    H = 150 + 190 + 70 + 70 + headline_h + 90
 
     img = Image.new("RGB", (W, H), BG)
     d = ImageDraw.Draw(img)
@@ -459,15 +459,29 @@ def render(company, items, price, hours, out_path, fund=None):
     else:
         d.text((PAD + 30, y + 60), "Price unavailable", font=h1_f, fill=MUTED)
 
-    # key ratios under the price card
+    # key ratios under the price card (wrapped to the card width)
     y += 190
     if fund and fund.get("values"):
         v = fund["values"]
         bits = [f"{lbl} {v[k]}" for k, lbl in (("market_cap", "Mkt cap"), ("pe", "P/E"), ("fwd_pe", "Fwd P/E"),
                                                  ("ps", "P/S"), ("ev_ebitda", "EV/EBITDA"), ("net_margin", "Net margin"),
                                                  ("rev_growth", "Rev growth"), ("earnings", "Earnings")) if v.get(k)]
-        d.text((PAD, y), plain("   -   ".join(bits)), font=font(18), fill=MUTED)
-    y += 10
+        rf, line, lines = font(18), "", []
+        for b in bits:
+            trial = f"{line}   -   {b}" if line else b
+            if d.textlength(trial, font=rf) <= W - 2 * PAD:
+                line = trial
+            else:
+                lines.append(line)
+                line = b
+        if line:
+            lines.append(line)
+        for ln in lines:
+            d.text((PAD, y), plain(ln), font=rf, fill=MUTED)
+            y += 26
+        y += 14
+    else:
+        y += 10
 
     # sentiment summary
     pos = sum(1 for i in items if i["score"] > 0)
