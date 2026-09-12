@@ -9,6 +9,10 @@ services:
     buildCommand: "pip install -r requirements.txt"
     startCommand: "python server.py --host 0.0.0.0"
     healthCheckPath: /api/health
+    disk:                         # survives deploys and restarts: histories, prices, pictures, companies.json
+      name: newsroom-data
+      mountPath: /data
+      sizeGB: 1
     envVars:
       - key: PYTHON_VERSION
         value: "3.13.4"
@@ -16,4 +20,6 @@ services:
         value: "2"
       - key: TZ                   # timestamps on the pictures and the page in the user's time zone
         value: Europe/Vienna
+      - key: DATA_DIR             # everything the agent writes lives on the disk
+        value: /data
       # Optional: GITHUB_TOKEN (set in the dashboard, never here) also commits companies.json to the repo.
