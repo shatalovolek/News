@@ -61,6 +61,14 @@ def scheduler(hours):
         refresh()
 
 
+def _mounted(path):
+    """True when `path` is its own mount point (a Render disk), False for a plain folder."""
+    try:
+        return os.path.ismount(path)
+    except Exception:  # noqa: BLE001
+        return False
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "newsroom/1.0"
 
@@ -107,7 +115,8 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/health":
             return self._send(200, {"ok": True, "last_run": STATE["last_run"], "running": STATE["running"],
                                     "last_error": STATE["last_error"], "companies": len(agent.load_companies()),
-                                    "persistent": bool(os.environ.get("GITHUB_TOKEN") or os.environ.get("DATA_DIR"))})
+                                    "persistent": bool(os.environ.get("GITHUB_TOKEN") or os.environ.get("DATA_DIR")),
+                                    "data_dir": agent.OUT_DIR, "disk_mounted": _mounted(agent.OUT_DIR)})
         if path == "/api/companies":
             return self._send(200, agent.load_companies())
         if path.startswith("/pictures/"):
