@@ -14,6 +14,8 @@ services:
         value: "3.13.4"
       - key: REFRESH_HOURS
         value: "3"
+      - key: TZ                    # timestamps on the pictures and the page in the user's time zone
+        value: Europe/Vienna
       # Uncomment when a Render Disk is attached (Settings → Disks, mount path /data)
       # so histories and companies added from the page survive restarts and deploys:
       # - key: DATA_DIR

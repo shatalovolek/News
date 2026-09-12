@@ -249,12 +249,34 @@ GREY = (170, 176, 186)
 ACCENT = (0, 120, 212)
 
 
+FONT_CANDIDATES = [  # (regular, bold, ttc index for regular/bold)
+    ("/System/Library/Fonts/Helvetica.ttc", "/System/Library/Fonts/Helvetica.ttc", (0, 1)),          # macOS
+    ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", (0, 0)),  # Debian/Ubuntu
+    ("/usr/share/fonts/dejavu/DejaVuSans.ttf", "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf", (0, 0)),  # Fedora/Alpine
+    ("/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf", "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf", (0, 0)),
+]
+_FONT_CACHE = {}
+
+
 def font(size, bold=False):
-    path = "/System/Library/Fonts/Helvetica.ttc"
-    try:
-        return ImageFont.truetype(path, size, index=1 if bold else 0)
-    except Exception:  # noqa: BLE001
-        return ImageFont.load_default()
+    key = (size, bold)
+    if key in _FONT_CACHE:
+        return _FONT_CACHE[key]
+    f = None
+    for reg, bld, idx in FONT_CANDIDATES:
+        path, index = (bld, idx[1]) if bold else (reg, idx[0])
+        try:
+            f = ImageFont.truetype(path, size, index=index)
+            break
+        except Exception:  # noqa: BLE001
+            continue
+    if f is None:  # Pillow >= 10.1 ships a scalable default font; older ones give a bitmap font
+        try:
+            f = ImageFont.load_default(size=size)
+        except TypeError:
+            f = ImageFont.load_default()
+    _FONT_CACHE[key] = f
+    return f
 
 
 def wrap(draw, text, fnt, max_w):
