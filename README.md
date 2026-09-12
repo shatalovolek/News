@@ -70,19 +70,18 @@ the page is served by the Python service):
    Check the commit author first: `git log -1 --format='%an <%ae>'` should show
    `Alex <shatalov@beat-trade.com>` (set with `git config user.name/user.email`).
 2. Render dashboard → **New → Blueprint** → pick the repo. `render.yaml` creates the
-   service `stock-newsroom` in Frankfurt on the free plan.
+   service `stock-newsroom` in Frankfurt on the Starter instance with a 1 GB disk at `/data`
+   (`DATA_DIR=/data`), so histories, prices, pictures and the company list survive deploys.
 3. Render → the service → **Settings → Custom Domains → Add** `news.beat-trade.com`.
    Render shows the CNAME target (`stock-newsroom.onrender.com` or similar).
 4. Bluehost → cPanel → **Domains → Zone Editor** (not "Subdomains") → Add CNAME record:
    Name `news`, Value = the target from step 3.
 5. Check: `./scripts_check_domain.sh news.beat-trade.com`.
 
-Free-plan notes: the service sleeps after 15 minutes without visitors (first visit then
-takes ~1 minute to wake, after which it re-collects the news), and its disk is wiped on
-every deploy, so histories restart from what the feeds still hold (~30 days).
-
-**Keeping companies added on the site.** Without persistence the list also resets to the
-repo's `companies.json` on every deploy. Free fix: let the server commit the list to GitHub.
+If the service is ever moved back to the free plan: it sleeps after 15 idle minutes and its
+disk is wiped on every deploy, so histories restart from what the feeds hold (~30 days) and
+the company list resets to the repo's `companies.json`. Free workaround for the list: let
+the server commit it to GitHub.
 1. GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens →
    Generate new token. Repository access: only `News`. Permissions: Contents → Read and write.
 2. Render → the service → Environment → Add environment variable: `GITHUB_TOKEN` = the token.
@@ -90,8 +89,7 @@ repo's `companies.json` on every deploy. Free fix: let the server commit the lis
 From then on every add/remove on the site is committed to `companies.json` with
 `[skip render]` in the message, so it does not trigger a deploy, and the next deploy
 starts from the updated list. The add panel warns when persistence is off.
-Paid alternative: a Render Disk (Settings → Disks, mount `/data`) plus `DATA_DIR=/data`
-keeps histories and pictures as well.
+With the disk in place the token is optional; it only adds a copy of the list in the repo.
 
 ## Sources
 Google News RSS (query "Bloom Energy" OR "NYSE:BE") and Yahoo Finance headline RSS,

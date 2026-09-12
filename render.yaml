@@ -4,19 +4,22 @@ services:
   - type: web
     name: stock-newsroom
     runtime: python
-    plan: free                    # free: sleeps after 15 min idle, disk is wiped on every deploy
+    plan: starter                 # paid instance: no sleeping, and a persistent disk is allowed
     region: frankfurt
     buildCommand: "pip install -r requirements.txt"
     startCommand: "python server.py --host 0.0.0.0"
     healthCheckPath: /api/health
+    disk:                         # survives deploys and restarts: histories, prices, pictures, companies.json
+      name: newsroom-data
+      mountPath: /data
+      sizeGB: 1
     envVars:
       - key: PYTHON_VERSION
         value: "3.13.4"
       - key: REFRESH_HOURS
         value: "2"
-      - key: TZ                    # timestamps on the pictures and the page in the user's time zone
+      - key: TZ                   # timestamps on the pictures and the page in the user's time zone
         value: Europe/Vienna
-      # Uncomment when a Render Disk is attached (Settings → Disks, mount path /data)
-      # so histories and companies added from the page survive restarts and deploys:
-      # - key: DATA_DIR
-      #   value: /data
+      - key: DATA_DIR             # everything the agent writes lives on the disk
+        value: /data
+      # Optional: GITHUB_TOKEN (set in the dashboard, never here) also commits companies.json to the repo.
