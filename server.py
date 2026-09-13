@@ -88,7 +88,9 @@ def _brief_status():
     import brief
     if not os.environ.get("ANTHROPIC_API_KEY"):
         return {"enabled": False}
-    out = {"enabled": True, "model": brief.MODEL, "lang": brief.LANG, "companies": {}}
+    dg = brief.load_digest(agent.OUT_DIR) or {}
+    out = {"enabled": True, "model": brief.MODEL, "lang": brief.LANG, "companies": {},
+           "digest": {"generated": dg.get("generated"), "error": dg.get("error"), "usage": dg.get("usage")}}
     for c in agent.load_companies():
         b = brief.load_brief(agent.OUT_DIR, c["ticker"]) or {}
         out["companies"][c["ticker"]] = {"generated": b.get("generated"), "error": b.get("error"),

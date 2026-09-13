@@ -112,6 +112,60 @@ footer{margin-top:28px;font-size:12px;color:var(--muted);line-height:1.6;max-wid
 .bcard p{margin:0;font-size:13.5px;line-height:1.45;color:var(--ink)}
 .bcard .w{margin-top:6px;font-size:12.5px;color:var(--muted)}
 @media (max-width:760px){.bgrid{grid-template-columns:1fr}}
+/* SEC filings */
+.sec{background:var(--surface);border:1px solid var(--line);border-top:0;padding:14px 16px 12px}
+.sec-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px}
+.sec-head h2{font-family:var(--font-display);font-size:18px;font-weight:600;margin:0}
+.sec-head small{font-family:var(--font-mono);font-size:11.5px;color:var(--muted)}
+.secgrid{display:grid;grid-template-columns:3fr 2fr;gap:16px 28px;margin-top:10px}
+.sec h3{font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:8px 0 4px;font-weight:500}
+.flist{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.flist li{display:grid;grid-template-columns:86px 1fr;gap:10px;padding:7px 0;border-bottom:1px solid var(--line-soft);font-size:13.5px;line-height:1.35;align-items:start}
+.flist .fd{font-family:var(--font-mono);font-size:12px;color:var(--muted);padding-top:2px;font-variant-numeric:tabular-nums}
+.fb{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.04em;padding:1px 6px;border-radius:2px;background:var(--neu-soft);color:var(--muted);margin-right:6px;white-space:nowrap}
+.fb.k8{background:var(--accent-soft);color:var(--accent)}.fb.f4{background:var(--pos-soft);color:var(--pos)}.fb.sh{background:var(--neg-soft);color:var(--neg)}
+.flist a{text-decoration:none}.flist a:hover{text-decoration:underline}
+.flist .it{color:var(--muted);font-size:12.5px}
+.ins{width:100%;border-collapse:collapse;font-size:13px}
+.ins th{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);text-align:left;font-weight:500;padding:4px 6px 4px 0;border-bottom:1px solid var(--line)}
+.ins td{padding:6px 6px 6px 0;border-bottom:1px solid var(--line-soft);vertical-align:top;font-variant-numeric:tabular-nums}
+.ins td.n{text-align:right;font-family:var(--font-mono);font-size:12.5px;white-space:nowrap}
+.ins .buy{color:var(--pos)}.ins .sell{color:var(--neg)}
+.sec .off{font-size:13.5px;color:var(--muted);padding:6px 0}
+/* relative performance */
+.rel{background:var(--surface);border:1px solid var(--line);border-top:0;padding:14px 16px 12px}
+.rel-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px}
+.rel-head h2{font-family:var(--font-display);font-size:18px;font-weight:600;margin:0}
+.rel-head small{font-family:var(--font-mono);font-size:11.5px;color:var(--muted)}
+.relgrid{display:grid;grid-template-columns:2fr 3fr;gap:12px 28px;margin-top:10px;align-items:start}
+.rt{width:100%;border-collapse:collapse;font-size:13.5px}
+.rt th{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);text-align:right;font-weight:500;padding:4px 6px;border-bottom:1px solid var(--line)}
+.rt th:first-child{text-align:left}
+.rt td{padding:6px;border-bottom:1px solid var(--line-soft);text-align:right;font-family:var(--font-mono);font-size:12.5px;font-variant-numeric:tabular-nums}
+.rt td:first-child{text-align:left;font-family:var(--font-body);font-size:13.5px}
+.rt tr.company td{font-weight:600}.rt td .rl{font-family:var(--font-mono);font-size:10.5px;color:var(--muted);margin-left:6px}
+.rt .sw{display:inline-block;width:10px;height:3px;border-radius:2px;vertical-align:middle;margin-right:7px}
+.rel .verdict{font-size:14px;line-height:1.45;margin-top:8px;padding:8px 12px;background:var(--bg);border-radius:3px}
+.rel svg{width:100%;height:auto;display:block;overflow:visible}
+/* calendar + digest (summary) */
+.cal{list-style:none;margin:8px 0 0;padding:0;border-top:1px solid var(--line);columns:2;column-gap:28px}
+.cal li{display:grid;grid-template-columns:96px 1fr;gap:10px;padding:8px 0;border-bottom:1px solid var(--line-soft);font-size:14px;line-height:1.35;break-inside:avoid}
+.cal .cd{font-family:var(--font-mono);font-size:12px;color:var(--muted);padding-top:2px;font-variant-numeric:tabular-nums}
+.cal .cd b{display:block;color:var(--ink);font-weight:500}
+.cal .cs{font-size:12px;color:var(--muted);display:block;margin-top:1px}
+.cal .cob{margin-right:6px}
+.digest{background:var(--surface);border:1px solid var(--line);padding:16px 18px 14px;margin-top:8px}
+.digest .hl{font-family:var(--font-display);font-size:21px;font-weight:600;line-height:1.25;margin:0 0 8px;text-wrap:balance}
+.digest p{font-size:15px;line-height:1.55;margin:0 0 10px;max-width:78ch;text-wrap:pretty}
+.dgrid{display:grid;grid-template-columns:3fr 2fr;gap:12px 28px}
+.digest h3{font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:8px 0 4px;font-weight:500}
+.digest ul{margin:0;padding:0;list-style:none}.digest li{padding:6px 0;border-top:1px solid var(--line-soft);font-size:14px;line-height:1.4}
+.digest li .tone{margin-right:8px;vertical-align:middle}
+.digest .nx li{padding-left:16px;position:relative}.digest .nx li:before{content:'›';position:absolute;left:2px;color:var(--accent)}
+.digest small{font-family:var(--font-mono);font-size:11.5px;color:var(--muted)}
+.bnew{font-size:14px;line-height:1.45;margin:0 0 10px;padding:8px 12px;border-left:3px solid var(--accent);background:var(--bg)}
+.bnew b{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);font-weight:500;display:block;margin-bottom:2px}
+@media (max-width:760px){.secgrid,.relgrid,.dgrid{grid-template-columns:1fr}.cal{columns:1}}
 /* fundamentals */
 .funds{background:var(--surface);border:1px solid var(--line);border-top:0;padding:14px 16px 12px}
 .funds-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px}
@@ -237,6 +291,9 @@ h2.sec small{font-family:var(--font-mono);font-size:12px;color:var(--muted);font
 
 <div id="summary-view" hidden>
   <div class="overview" id="overview"></div>
+  <div id="digestwrap" hidden><h2 class="sec">Week in review <small id="digest-note"></small></h2><div class="digest" id="digest"></div></div>
+  <h2 class="sec" id="cal-h" hidden>Calendar <small>next 60 days, all companies</small></h2>
+  <ul class="cal" id="cal" hidden></ul>
   <h2 class="sec" id="briefs-h" hidden>Daily briefs <small id="briefs-note"></small></h2>
   <div class="briefs" id="briefs" hidden></div>
   <h2 class="sec">Most important news <small id="topnote"></small></h2>
@@ -249,12 +306,24 @@ h2.sec small{font-family:var(--font-mono);font-size:12px;color:var(--muted);font
 <div class="tiles" id="tiles"></div>
 <section class="brief" id="brief" hidden>
   <div class="brief-head"><h2>AI brief <span class="tone" id="btone"></span></h2><small id="bnote"></small></div>
+  <div class="bnew" id="bnew" hidden><b>New since the previous brief</b><span id="bnewtxt"></span></div>
   <p class="sum" id="bsum"></p>
   <div class="themes" id="bthemes"></div>
   <div class="bgrid">
     <div><h3>Key events</h3><ul class="events" id="bevents"></ul><div class="mood" id="bmood"></div></div>
     <div><h3>Risks and open questions</h3><ul class="plain" id="brisks"></ul><h3>What to watch</h3><div class="watch" id="bwatch"></div></div>
   </div>
+</section>
+<section class="rel" id="rel" hidden>
+  <div class="rel-head"><h2>Versus sector and peers</h2><small id="relnote"></small></div>
+  <div class="relgrid"><div><table class="rt" id="rtable"></table><div class="verdict" id="relverdict"></div></div>
+  <div><svg id="relchart" viewBox="0 0 640 220" role="img" aria-label="Indexed performance, 3 months"></svg></div></div>
+</section>
+<section class="sec" id="sec" hidden>
+  <div class="sec-head"><h2>SEC filings and insiders</h2><small id="secnote"></small></div>
+  <div class="sgrid" id="secgrid-tiles"></div>
+  <div class="secgrid"><div><h3>Recent filings</h3><ul class="flist" id="flist"></ul></div>
+  <div><h3>Insider transactions, 90 days</h3><div id="insider"></div></div></div>
 </section>
 <section class="funds" id="funds" hidden>
   <div class="funds-head"><h2>Fundamentals</h2><small id="funds-note"></small></div>
@@ -286,7 +355,7 @@ h2.sec small{font-family:var(--font-mono);font-size:12px;color:var(--muted);font
 <div id="timeline"></div>
 </div>
 
-<footer>AI brief: generated by Claude from the headlines, StockTwits and price data shown on this page; it reports, it does not advise. Social: StockTwits public stream (bullish/bearish tags are set by the posters), Google Trends (relative search interest, 100 = peak of the period). Fundamentals: Finviz or StockAnalysis, refreshed with the news; trailing-twelve-month figures where applicable. Sources: Google News and Yahoo Finance RSS, de-duplicated, collected several times a day for every tracked company. "Most important" ranks headlines by a heuristic: real events (earnings, deals, lawsuits, launches) from major outlets score high; holdings filings, listicles and stock-tip pieces score low. Tone tags come from a keyword heuristic on the headline and are a reading aid, not investment advice. Times are shown in your local time zone.</footer>
+<footer>SEC filings and insider transactions from EDGAR (official, 90 days; open-market buys and sales only in the totals). Relative performance: daily closes from Yahoo Finance, sector ETF chosen by industry. Calendar: earnings dates from StockAnalysis, other dates extracted by Claude from the headlines. AI brief: generated by Claude from the headlines, StockTwits and price data shown on this page; it reports, it does not advise. Social: StockTwits public stream (bullish/bearish tags are set by the posters), Google Trends (relative search interest, 100 = peak of the period). Fundamentals: Finviz or StockAnalysis, refreshed with the news; trailing-twelve-month figures where applicable. Sources: Google News and Yahoo Finance RSS, de-duplicated, collected several times a day for every tracked company. "Most important" ranks headlines by a heuristic: real events (earnings, deals, lawsuits, launches) from major outlets score high; holdings filings, listicles and stock-tip pieces score low. Tone tags come from a keyword heuristic on the headline and are a reading aid, not investment advice. Times are shown in your local time zone.</footer>
 </div>
 
 <script id="data" type="application/json">__DATA__</script>
@@ -360,6 +429,19 @@ function showSummary(){
       ${c.fundamentals&&c.fundamentals.values?`<span class="fr">${[['market_cap','Cap'],['pe','P/E'],['fwd_pe','Fwd P/E'],['ps','P/S'],['ev_ebitda','EV/EBITDA']].filter(([k])=>c.fundamentals.values[k]).map(([k,l])=>`<span>${l} <b>${esc(c.fundamentals.values[k])}</b></span>`).join('')}</span>`:''}
       <span class="cnt">${t} headline${t===1?'':'s'} today · ${week.length} this week · <span class="up">${week.filter(i=>i.score>0).length}</span>/<span class="down">${week.filter(i=>i.score<0).length}</span></span></button>`;}).join('');
   document.querySelectorAll('.co').forEach(b=>b.onclick=()=>selectTab(b.dataset.t));
+  // calendar: merged events across companies, next 60 days
+  const events=[]; const todayK=dayKey(new Date()); const limit=new Date(Date.now()+60*864e5);
+  companies.forEach(c=>(c.calendar||[]).forEach(e=>{const d=new Date(e.date+'T12:00'); if(!isNaN(d)&&e.date>=todayK&&d<=limit) events.push({...e,co:c});}));
+  events.sort((a,b)=>a.date.localeCompare(b.date)||a.co.ticker.localeCompare(b.co.ticker));
+  document.getElementById('cal-h').hidden=!events.length; document.getElementById('cal').hidden=!events.length;
+  document.getElementById('cal').innerHTML=events.map(e=>{const d=new Date(e.date+'T12:00'); const days=Math.round((d-new Date(todayK+'T12:00'))/864e5);
+    return `<li><span class="cd"><b>${fmtD.format(d)}</b>${days===0?'today':days===1?'tomorrow':'in '+days+' days'}</span><span><button class="cob" data-t="${esc(e.co.ticker)}">${esc(e.co.ticker)}</button>${esc(e.what)}<span class="cs">${esc(e.source||'')}</span></span></li>`;}).join('');
+  document.querySelectorAll('#cal .cob').forEach(b=>b.onclick=()=>selectTab(b.dataset.t));
+  // weekly digest
+  const G=DATA.digest; const dw=document.getElementById('digestwrap'); dw.hidden=!(G&&G.data);
+  if(G&&G.data){ const g=G.data; document.getElementById('digest-note').textContent=`week ending ${fmtD.format(new Date(G.week_ending+'T12:00'))} · by Claude`;
+    document.getElementById('digest').innerHTML=`<p class="hl">${esc(g.headline)}</p><p>${esc(g.overview)}</p><div class="dgrid"><div><h3>Company by company</h3><ul>${g.by_company.map(x=>`<li><span class="tone ${x.tone}">${x.tone}</span><button class="cob" data-t="${esc(x.ticker)}">${esc(x.ticker)}</button> ${esc(x.line)}</li>`).join('')}</ul></div><div><h3>Themes</h3><div class="themes">${g.themes.map(t=>`<span>${esc(t)}</span>`).join('')}</div><h3>Next week</h3><ul class="nx">${g.next_week.map(t=>`<li>${esc(t)}</li>`).join('')}</ul></div></div>`;
+    document.querySelectorAll('#digest .cob').forEach(b=>b.onclick=()=>selectTab(b.dataset.t)); }
   const withBrief=companies.filter(c=>c.brief&&c.brief.data);
   document.getElementById('briefs-h').hidden=!withBrief.length; document.getElementById('briefs').hidden=!withBrief.length;
   if(withBrief.length){
@@ -428,7 +510,7 @@ function show(c){
   document.getElementById('eyebrow').textContent = `${c.exchange}: ${c.ticker} · daily news log`;
   document.getElementById('h1').innerHTML = `${esc(c.name)} <span>Newsroom</span>`;
   document.getElementById('chart-title').textContent = `${c.ticker} share price and news volume, last 90 days`;
-  renderTiles(c); renderBrief(c); renderFunds(c); renderSocial(c); renderChart(c); buildFilters(c); render();
+  renderTiles(c); renderBrief(c); renderRel(c); renderSec(c); renderFunds(c); renderSocial(c); renderChart(c); buildFilters(c); render();
 }
 
 const FUND_LABELS=[['market_cap','Market cap','Total value of all shares'],['pe','P/E','Price / earnings per share, trailing 12 months'],['fwd_pe','Forward P/E','Price / expected earnings next fiscal year'],['peg','PEG','P/E divided by expected earnings growth'],['ps','P/S','Price / sales per share'],['pb','P/B','Price / book value per share'],['ev_ebitda','EV/EBITDA','Enterprise value / EBITDA'],['eps','EPS (ttm)','Earnings per share, trailing 12 months'],['revenue','Revenue (ttm)',''],['net_income','Net income (ttm)',''],['rev_growth','Revenue growth','Year over year, trailing 12 months'],['gross_margin','Gross margin',''],['oper_margin','Operating margin',''],['net_margin','Net margin',''],['roe','ROE','Return on equity'],['debt_equity','Debt / equity',''],['div_yield','Dividend yield',''],['beta','Beta','Volatility vs the market (1 = market)'],['range_52w','52-week range',''],['short_float','Short float','Share of float sold short'],['target','Analyst target',''],['earnings','Next earnings','Estimated until the company confirms it'],['perf_year','1-year change','']];
@@ -440,11 +522,53 @@ function renderBrief(c){
   const t=document.getElementById('btone'); t.textContent=d.tone; t.className='tone '+d.tone;
   document.getElementById('bnote').textContent=`${fmtD.format(new Date(B.generated))} ${fmtT.format(new Date(B.generated))} · ${B.headlines_used} headlines read${B.error?' · last refresh failed, showing previous':''}`;
   document.getElementById('bsum').textContent=d.summary;
+  const nw=document.getElementById('bnew'); const wn=(d.whats_new||'').trim(); nw.hidden=!wn||/^(first brief|nothing material)/i.test(wn); document.getElementById('bnewtxt').textContent=wn;
   document.getElementById('bthemes').innerHTML=(d.themes||[]).map(x=>`<span>${esc(x)}</span>`).join('');
   document.getElementById('bevents').innerHTML=(d.key_events||[]).length?d.key_events.map(e=>`<li><b>${esc(e.what)}</b><span class="why">${esc(e.why_it_matters)}</span>${(e.headlines||[]).length?`<span class="src">${e.headlines.map(h=>`<a href="${esc(h.link)}" target="_blank" rel="noopener" title="${esc(h.title)}">${esc(h.source)}</a>`).join('')}</span>`:''}</li>`).join(''):'<li style="color:var(--muted)">No material events in the period.</li>';
   document.getElementById('bmood').textContent=d.retail_mood&&d.retail_mood.toLowerCase()!=='no data'?'Retail mood: '+d.retail_mood:'';
   document.getElementById('brisks').innerHTML=(d.risks||[]).length?d.risks.map(x=>`<li>${esc(x)}</li>`).join(''):'<li style="color:var(--muted);list-style:none;margin-left:-18px">None flagged.</li>';
   document.getElementById('bwatch').textContent=d.watch||'';
+}
+const ROLE_COL={company:'var(--accent)',sector:'var(--pos)',index:'var(--ink)',peer:'var(--neu)'};
+function renderRel(c){
+  const sec=document.getElementById('rel'), R=c.relative;
+  if(!R||!R.rows||R.rows.length<2){ sec.hidden=true; return; }
+  sec.hidden=false;
+  document.getElementById('relnote').textContent=(R.benchmark?`sector ETF ${R.benchmark} (${R.benchmark_name}) · `:'')+'S&P 500 via SPY';
+  const W=['1d','1w','1m','3m'];
+  document.getElementById('rtable').innerHTML=`<tr><th></th>${W.map(w=>`<th>${w}</th>`).join('')}</tr>`+R.rows.map(r=>`<tr class="${r.role}"><td><i class="sw" style="background:${ROLE_COL[r.role]}"></i>${esc(r.role==='company'?c.name:r.name)}<span class="rl">${esc(r.ticker)}</span></td>${W.map(w=>{const v=r.returns[w];return `<td class="${cls(v)}">${v==null?'—':(v>=0?'+':'')+v.toFixed(1)+'%'}</td>`;}).join('')}</tr>`).join('');
+  const e1=R.excess['1w']||{}, e1m=R.excess['1m']||{};
+  const say=(pp,what)=>pp==null?'':`${Math.abs(pp)<1?'in line with':pp>0?`ahead of`:`behind`} ${what}${Math.abs(pp)>=1?` by ${Math.abs(pp).toFixed(1)} pp`:''}`;
+  document.getElementById('relverdict').textContent=e1.vs_sector==null?'':`Past week: ${say(e1.vs_sector,'its sector')}, ${say(e1.vs_index,'the S&P 500')}. Past month: ${say(e1m.vs_sector,'sector')}, ${say(e1m.vs_index,'index')}.`;
+  // indexed chart
+  const svg=document.getElementById('relchart'), Wd=640,H=220,L=36,Rr=44,T=10,B=22;
+  const all=R.lines.flatMap(l=>l.points); if(!all.length){svg.innerHTML='';return;}
+  const t0=Math.min(...all.map(p=>p.t)), t1=Math.max(...all.map(p=>p.t)), lo=Math.min(...all.map(p=>p.v)), hi=Math.max(...all.map(p=>p.v));
+  const x=t=>L+(t-t0)/((t1-t0)||1)*(Wd-L-Rr), y=v=>T+(1-(v-lo)/((hi-lo)||1))*(H-T-B);
+  let out=`<g class="grid"><line x1="${L}" x2="${Wd-Rr}" y1="${y(100).toFixed(1)}" y2="${y(100).toFixed(1)}"/></g><text x="${L-6}" y="${y(100).toFixed(1)+4}" text-anchor="end">100</text>`;
+  [...R.lines].sort((a,b)=>(a.role==='company')-(b.role==='company')).forEach(l=>{const pts=l.points.map(p=>`${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`).join(' '); const last=l.points[l.points.length-1];
+    out+=`<polyline points="${pts}" fill="none" stroke="${ROLE_COL[l.role]}" stroke-width="${l.role==='company'?2.5:1.5}" opacity="${l.role==='peer'?.7:1}" stroke-linejoin="round"/>`;
+    out+=`<text x="${(x(last.t)+5).toFixed(1)}" y="${(y(last.v)+4).toFixed(1)}" style="fill:${ROLE_COL[l.role]};font-weight:${l.role==='company'?600:400}">${esc(l.ticker)} ${last.v.toFixed(0)}</text>`;});
+  [t0,t1].forEach((t,i)=>{out+=`<text x="${x(t).toFixed(1)}" y="${H-4}" text-anchor="${i?'end':'start'}">${fmtD.format(new Date(t))}</text>`;});
+  svg.innerHTML=out;
+}
+function money(v){ return v>=1e9?`$${(v/1e9).toFixed(2)}B`:v>=1e6?`$${(v/1e6).toFixed(1)}M`:v>=1e3?`$${(v/1e3).toFixed(0)}K`:`$${v}`; }
+function renderSec(c){
+  const sec=document.getElementById('sec'), E=c.edgar;
+  if(!E||(!E.cik&&!E.note)){ sec.hidden=true; return; }
+  sec.hidden=false;
+  if(!E.cik){ document.getElementById('secnote').textContent=''; document.getElementById('secgrid-tiles').innerHTML=''; document.getElementById('flist').innerHTML=`<li class="off">${esc(E.note||'No SEC filings for this ticker.')}</li>`; document.getElementById('insider').innerHTML=''; return; }
+  document.getElementById('secnote').textContent=`CIK ${E.cik}${E.sic?' · '+E.sic:''} · updated ${fmtD.format(new Date(E.updated))}`;
+  const l8=E.last_8k;
+  document.getElementById('secgrid-tiles').innerHTML=`
+    <div class="f"><div class="k">Insider buys, 90 d</div><div class="v ${E.buys.n?'bull':''}">${E.buys.n?money(E.buys.value):'none'}</div><div class="sub">${E.buys.n?`${E.buys.n} open-market buy${E.buys.n>1?'s':''} · ${E.buys.people} insider${E.buys.people>1?'s':''}`:'no open-market purchases'}</div></div>
+    <div class="f"><div class="k">Insider sales, 90 d</div><div class="v ${E.sells.n?'bear':''}">${E.sells.n?money(E.sells.value):'none'}</div><div class="sub">${E.sells.n?`${E.sells.n} sale${E.sells.n>1?'s':''} · ${E.sells.people} insider${E.sells.people>1?'s':''}`:'no open-market sales'}</div></div>
+    <div class="f"><div class="k">Last ${l8?l8.form:'8-K'}</div><div class="v small">${l8?fmtD.format(new Date(l8.date)):'—'}</div><div class="sub">${l8?esc(l8.items.map(i=>i.name).filter(Boolean).join(', ')||l8.label):'none in 120 days'}</div></div>
+    <div class="f"><div class="k">Share offerings</div><div class="v small ${E.shelf.length?'bear':''}">${E.shelf.length?E.shelf[0].form+' · '+fmtD.format(new Date(E.shelf[0].date)):'none'}</div><div class="sub">${E.shelf.length?'shelf or prospectus filed in 120 days':'no shelf / prospectus in 120 days'}</div></div>
+    <div class="f"><div class="k">Large holders</div><div class="v small">${E.stakes.length?E.stakes.length+' filing'+(E.stakes.length>1?'s':''):'—'}</div><div class="sub">${E.stakes.length?esc(E.stakes[0].form+' · '+fmtD.format(new Date(E.stakes[0].date))):'no 13D/13G in 120 days'}</div></div>`;
+  const badge=f=>`<span class="fb ${f.form.startsWith('8-K')||f.form==='6-K'?'k8':f.form==='4'?'f4':/^(S-3|424B|F-3|S-1)/.test(f.form)?'sh':''}">${esc(f.form)}</span>`;
+  document.getElementById('flist').innerHTML=E.filings.length?E.filings.map(f=>`<li><span class="fd">${fmtD.format(new Date(f.date))}</span><span>${badge(f)}<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.label)}</a>${f.items&&f.items.length?`<span class="it"> · ${esc(f.items.map(i=>i.name||i.code).join(', '))}</span>`:''}</span></li>`).join(''):'<li class="off">No filings in the last 120 days.</li>';
+  document.getElementById('insider').innerHTML=E.insider.length?`<table class="ins"><tr><th>Date</th><th>Who</th><th>What</th><th style="text-align:right">Shares</th><th style="text-align:right">Price</th></tr>${E.insider.map(x=>`<tr><td class="n">${fmtD.format(new Date(x.date))}</td><td>${esc(x.owner)}${x.title?`<div style="font-size:11.5px;color:var(--muted)">${esc(x.title)}</div>`:''}</td><td class="${x.code==='P'?'buy':x.code==='S'?'sell':''}">${esc(x.kind)}</td><td class="n">${x.shares.toLocaleString()}</td><td class="n">${x.price?'$'+x.price.toFixed(2):'—'}</td></tr>`).join('')}</table>`:'<div class="off">No insider transactions in 90 days.</div>';
 }
 function renderFunds(c){
   const sec=document.getElementById('funds'), f=c.fundamentals;

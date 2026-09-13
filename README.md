@@ -108,6 +108,31 @@ Settings (Render → Environment): `ANTHROPIC_API_KEY` (required), `BRIEF_LANG` 
 day that is around $0.45/day. `/api/health` → `briefs` shows generation times, token usage and
 errors per company.
 
+## SEC filings and insiders (EDGAR)
+`edgar.py` reads the official EDGAR feed for each company with a CIK: filings of the last 120 days
+(8-K with item names, 10-Q/10-K, shelf registrations and prospectuses, 13D/13G stakes, Form 4/144) and
+parses Form 4 insider transactions (open-market buys and sales, grants, option exercises, gifts).
+The page shows 90-day insider buy/sell totals, the last 8-K, share-offering and large-holder flags,
+the filing list and the transaction table; the brief gets the same facts. Foreign ADRs without a CIK
+show "no SEC registrant". The SEC requires a User-Agent with a contact address (set in `edgar.py`).
+
+## Versus sector and peers
+`relative.py` compares each company with SPY, a sector/industry ETF (chosen from Yahoo's sector and
+industry, `relative.SECTOR_ETF` / `INDUSTRY_ETF`) and up to 3 peers over 1 day, 1 week, 1 month and
+3 months, with an indexed 3-month chart. `benchmark` and `peers` live in `companies.json` and are
+filled automatically when a company is added (Yahoo for the sector; Claude suggests peers when the
+API key is set; `DEFAULT_PEERS` in the agent covers the initial list). Edit them by hand any time.
+
+## Calendar, what's new, weekly digest
+- **Calendar** (Summary tab): next 60 days across all companies: estimated earnings dates from
+  StockAnalysis plus dated events Claude extracts from the headlines (index inclusions, launches,
+  votes, lock-ups).
+- **New since the previous brief**: every brief receives the previous one and reports what changed.
+  Brief history is kept in `output/brief_history_<TICKER>.json` (30 entries).
+- **Week in review** (Summary tab): one cross-company digest generated from the week's briefs,
+  relative performance and calendar; regenerated when older than 6 days, or with
+  `python3 be_news_agent.py --digest`.
+
 ## Social section (StockTwits, Google Trends)
 Each company tab has a "Social" block: StockTwits messages in the last 24 h and 7 days with the
 bullish share (from the tags users set themselves), Reddit posts and upvotes in the big finance

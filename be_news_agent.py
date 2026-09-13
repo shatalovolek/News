@@ -33,6 +33,8 @@ from PIL import Image, ImageDraw, ImageFont
 
 import social
 import brief
+import edgar
+import relative
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT_DIR = os.environ.get("DATA_DIR") or os.path.join(HERE, "output")   # Render: mount a disk at /data
@@ -108,7 +110,42 @@ def lookup_ticker(query):
         "ticker": ticker, "name": name, "exchange": exch,
         "query": f'"{name}" OR "{exch}:{ticker}"' if exch else f'"{name}" OR {ticker}',
         "match": f"{re.escape(name)}|{re.escape(ticker)}",
+        "sector": q.get("sector"), "industry": q.get("industry"),
+        "benchmark": relative.etf_for(q.get("sector"), q.get("industry")),
     }
+
+
+DEFAULT_PEERS = {"BE": ["PLUG", "FCEL", "GEV"], "AMZN": ["MSFT", "GOOGL", "WMT"], "GOOGL": ["META", "MSFT", "AMZN"],
+                 "SNDK": ["MU", "WDC", "STX"], "WDC": ["STX", "SNDK", "MU"], "TTWO": ["EA", "RBLX", "NTDOY"],
+                 "MU": ["SNDK", "WDC", "NVDA"], "SPCX": ["RKLB", "ASTS", "LMT"], "SFTBY": ["ARM", "BABA", "NVDA"], "SOBKY": []}
+
+
+def enrich_company(c):
+    """Fill sector/industry/benchmark/peers for a company record (idempotent). Returns True if changed."""
+    changed = False
+    if not c.get("benchmark") or not c.get("sector"):
+        try:
+            info = lookup_ticker(c["ticker"])
+            if info and info["ticker"] == c["ticker"]:
+                for k in ("sector", "industry", "benchmark"):
+                    if info.get(k) and not c.get(k):
+                        c[k] = info[k]
+                        changed = True
+        except Exception as e:  # noqa: BLE001
+            print(f"[warn] enrich {c['ticker']}: {e}", file=sys.stderr)
+        if not c.get("benchmark"):
+            c["benchmark"] = "SPY"
+            changed = True
+    if "peers" not in c:
+        sug = brief.suggest_peers(c) if c["ticker"] not in DEFAULT_PEERS else None
+        if sug and sug.get("peers"):
+            c["peers"] = [p.upper() for p in sug["peers"][:3] if p.upper() != c["ticker"]]
+            if sug.get("benchmark_etf") and not c.get("benchmark_from_data"):
+                c["benchmark"] = sug["benchmark_etf"].upper()
+        else:
+            c["peers"] = DEFAULT_PEERS.get(c["ticker"], [])
+        changed = True
+    return changed
 
 
 def add_company(query):
@@ -120,6 +157,7 @@ def add_company(query):
     for existing in companies:
         if existing["ticker"] == c["ticker"]:
             return existing, False
+    enrich_company(c)
     companies.append(c)
     save_companies(companies)
     return c, True
@@ -645,7 +683,7 @@ def build_page(companies, results):
     except FileNotFoundError:
         print("[warn] page_template.html missing, page not built", file=sys.stderr)
         return None
-    data = {"generated": dt.datetime.now().astimezone().isoformat(), "companies": []}
+    data = {"generated": dt.datetime.now().astimezone().isoformat(), "companies": [], "digest": brief.load_digest(OUT_DIR)}
     for c in companies:
         hist, price = results.get(c["ticker"], (load_history(c["ticker"]), None))[:2]
         if price is None:
@@ -663,6 +701,10 @@ def build_page(companies, results):
             "fundamentals": fund,
             "social": social.summarize(social._load(social.social_file(OUT_DIR, c["ticker"]))),
             "brief": brief.load_brief(OUT_DIR, c["ticker"]),
+            "edgar": edgar.summarize(edgar._load(OUT_DIR, c["ticker"])),
+            "relative": load_relative(c["ticker"]),
+            "calendar": calendar_for(c),
+            "benchmark": c.get("benchmark"), "peers": c.get("peers", []),
             "ytd_change_pct": (price or {}).get("ytd_change_pct"),
             "closes": (price or {}).get("series", []),
             "items": [{"title": h["title"], "link": h["link"], "source": h["source"],
@@ -690,14 +732,23 @@ def push_config():
     return None
 
 
-def run_all(hours=24, backfill=False, only=None, verbose=True, pictures=True, push=None, force_brief=False):
+def run_all(hours=24, backfill=False, only=None, verbose=True, pictures=True, push=None, force_brief=False, force_digest=False):
     """Collect news for every company, update histories, render pictures, rebuild the page.
     Returns (companies, summary list). Used by the CLI and by server.py."""
     os.makedirs(OUT_DIR, exist_ok=True)
     companies = load_companies()
+    if any([enrich_company(c) for c in companies]):   # list: enrich every company, not just the first
+        save_companies(companies)
     wanted = {t.strip().upper() for t in only.split(",")} if only else None
     day = dt.datetime.now().strftime("%Y-%m-%d")
     results, summary = {}, []
+    series_cache = {}   # ticker -> price series, shared across companies (SPY, sector ETFs, peers)
+
+    def series_for(t):
+        if t not in series_cache:
+            pr = fetch_price(t)
+            series_cache[t] = (pr or {}).get("series") or []
+        return series_cache[t]
 
     for c in companies:
         if wanted and c["ticker"] not in wanted:
@@ -708,7 +759,26 @@ def run_all(hours=24, backfill=False, only=None, verbose=True, pictures=True, pu
             win = 72
             items = collect_news(c, win)
         price = fetch_price(c["ticker"])
+        series_cache[c["ticker"]] = (price or {}).get("series") or []
         fund = fetch_fundamentals(c["ticker"])
+        # SEC filings + insiders
+        try:
+            edgar.update_edgar(c, OUT_DIR)
+        except Exception as e:  # noqa: BLE001
+            print(f"[warn] edgar for {c['ticker']} failed: {e}", file=sys.stderr)
+        # relative performance vs sector ETF, SPY, peers
+        try:
+            tickers = [c["ticker"], c.get("benchmark") or "SPY", "SPY"] + list(c.get("peers") or [])
+            names = {c["ticker"]: c["name"], "SPY": "S&P 500"}
+            names.update({t: relative.ETF_NAMES.get(t, t) for t in tickers})
+            for pc in companies:
+                names[pc["ticker"]] = pc["name"]
+            rel = relative.compare(c["ticker"], {t: series_for(t) for t in dict.fromkeys(tickers)}, c.get("benchmark") or "SPY",
+                                   list(c.get("peers") or []), names)
+            with open(os.path.join(OUT_DIR, f"relative_{c['ticker']}.json"), "w") as f:
+                json.dump(rel, f)
+        except Exception as e:  # noqa: BLE001
+            print(f"[warn] relative for {c['ticker']} failed: {e}", file=sys.stderr)
         try:
             store = social.update_social(c, OUT_DIR, max_pages=12 if push else 8)
             if push:
@@ -728,7 +798,9 @@ def run_all(hours=24, backfill=False, only=None, verbose=True, pictures=True, pu
         if os.environ.get("ANTHROPIC_API_KEY"):
             try:
                 soc = social.summarize(social._load(social.social_file(OUT_DIR, c["ticker"])))
-                b = brief.generate(c, hist, soc, price, fund, OUT_DIR, force=force_brief)
+                extra = [brief.edgar_block(edgar.summarize(edgar._load(OUT_DIR, c["ticker"]))),
+                         relative.describe(load_relative(c["ticker"]))]
+                b = brief.generate(c, hist, soc, price, fund, OUT_DIR, force=force_brief, extra=extra)
                 if verbose and b and b.get("data"):
                     print(f"    brief: {b['data']['tone']} · {b['data']['summary'][:90]}…")
             except Exception as e:  # noqa: BLE001
@@ -748,10 +820,57 @@ def run_all(hours=24, backfill=False, only=None, verbose=True, pictures=True, pu
                 print(f"    [{'+' if it['score'] > 0 else '-' if it['score'] < 0 else ' '}] {it['title'][:90]}  ({it['source']})")
         summary.append(f"{c['ticker']} {len(items)}")
 
+    # weekly digest across companies (once a week, or --digest)
+    if os.environ.get("ANTHROPIC_API_KEY") and not wanted:
+        try:
+            texts = []
+            for c in companies:
+                hb = [h for h in brief.load_history(OUT_DIR, c["ticker"])
+                      if h["generated"] >= (dt.datetime.now().astimezone() - dt.timedelta(days=7)).isoformat()]
+                rel = load_relative(c["ticker"])
+                cal = "; ".join(f"{e['date']} {e['what']}" for e in calendar_for(c)[:5])
+                lines = [f"### {c['name']} ({c['ticker']})", relative.describe(rel)]
+                lines += [f"- brief {h['generated'][:10]} [{h['tone']}]: {h['summary']}" for h in hb[-7:]] or ["- no briefs this week"]
+                if cal:
+                    lines.append(f"- upcoming: {cal}")
+                texts.append("\n".join(lines))
+            brief.weekly_digest(companies, texts, OUT_DIR, force=force_digest)
+        except Exception as e:  # noqa: BLE001
+            print(f"[warn] weekly digest failed: {type(e).__name__}: {e}", file=sys.stderr)
+
     page = build_page(companies, results)
     if page and verbose:
         print(f"page {page}")
     return companies, summary
+
+
+def load_relative(ticker):
+    try:
+        with open(os.path.join(OUT_DIR, f"relative_{ticker}.json")) as f:
+            return json.load(f)
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def calendar_for(c):
+    """Dated upcoming events for one company: next earnings + events Claude found in the news."""
+    events, seen = [], set()
+    try:
+        with open(fundamentals_file(c["ticker"])) as f:
+            v = json.load(f).get("values", {})
+        if v.get("earnings"):
+            d = dt.datetime.strptime(v["earnings"], "%b %d, %Y").date()
+            if d >= dt.date.today():
+                events.append({"date": d.isoformat(), "what": "Earnings report (estimated until confirmed)", "source": "StockAnalysis"})
+                seen.add(d.isoformat())
+    except Exception:  # noqa: BLE001
+        pass
+    b = brief.load_brief(OUT_DIR, c["ticker"]) or {}
+    for e in (b.get("data") or {}).get("upcoming_events", []) or []:
+        if re.match(r"^\d{4}-\d{2}-\d{2}$", e.get("date", "")) and not (e["date"] in seen and "earning" in e["what"].lower()):
+            events.append({"date": e["date"], "what": e["what"], "source": e.get("source", "")})
+    events.sort(key=lambda e: e["date"])
+    return events
 
 
 def main():
@@ -765,6 +884,7 @@ def main():
     ap.add_argument("--remove", metavar="TICKER", help="stop tracking a company")
     ap.add_argument("--push", action="store_true", help="upload collected social data to the website (needs push.json)")
     ap.add_argument("--brief", action="store_true", help="regenerate the AI briefs now (needs ANTHROPIC_API_KEY)")
+    ap.add_argument("--digest", action="store_true", help="regenerate the weekly digest now (needs ANTHROPIC_API_KEY)")
     ap.add_argument("--companies-from", metavar="URL", help="use the company list of a running site instead of the local one")
     args = ap.parse_args()
 
@@ -790,7 +910,7 @@ def main():
         print(("added" if created else "already tracked") + f": {c['name']} ({c['exchange']}: {c['ticker']})")
         args.only = c["ticker"] if created else args.only
 
-    companies, summary = run_all(args.hours, args.backfill, args.only, push=push, force_brief=args.brief)
+    companies, summary = run_all(args.hours, args.backfill, args.only, push=push, force_brief=args.brief, force_digest=args.digest)
     page = PAGE if os.path.exists(PAGE) else None
 
     if sys.platform == "darwin":

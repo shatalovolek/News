@@ -4,62 +4,130 @@
     "name": "Bloom Energy",
     "exchange": "NYSE",
     "query": "\"Bloom Energy\" OR \"NYSE:BE\"",
-    "match": "Bloom Energy|Bloom's|NYSE:BE|\\$BE\\b|\\(BE\\)|\\bBE stock"
+    "match": "Bloom Energy|Bloom's|NYSE:BE|\\$BE\\b|\\(BE\\)|\\bBE stock",
+    "sector": "Industrials",
+    "industry": "Electrical Equipment & Parts",
+    "benchmark": "XLI",
+    "peers": [
+      "PLUG",
+      "FCEL",
+      "GEV"
+    ]
   },
   {
     "ticker": "AMZN",
     "name": "Amazon",
     "exchange": "NASDAQ",
     "query": "Amazon AMZN OR \"Amazon.com\" OR AWS OR \"Amazon Web Services\"",
-    "match": "Amazon|AMZN|\\bAWS\\b|Bezos|Jassy"
+    "match": "Amazon|AMZN|\\bAWS\\b|Bezos|Jassy",
+    "sector": "Consumer Cyclical",
+    "industry": "Internet Retail",
+    "benchmark": "XLY",
+    "peers": [
+      "MSFT",
+      "GOOGL",
+      "WMT"
+    ]
   },
   {
     "ticker": "GOOGL",
     "name": "Google",
     "exchange": "NASDAQ",
     "query": "Google OR Alphabet GOOGL OR Waymo OR DeepMind",
-    "match": "Google|Alphabet|GOOGL|\\bGOOG\\b|Waymo|DeepMind|YouTube|Pichai|Gemini"
+    "match": "Google|Alphabet|GOOGL|\\bGOOG\\b|Waymo|DeepMind|YouTube|Pichai|Gemini",
+    "sector": "Communication Services",
+    "industry": "Internet Content & Information",
+    "benchmark": "XLC",
+    "peers": [
+      "META",
+      "MSFT",
+      "AMZN"
+    ]
   },
   {
     "ticker": "SNDK",
     "name": "SanDisk",
     "exchange": "NASDAQ",
     "query": "SanDisk OR \"NASDAQ:SNDK\"",
-    "match": "SanDisk|Sandisk|SNDK"
+    "match": "SanDisk|Sandisk|SNDK",
+    "sector": "Technology",
+    "industry": "Computer Hardware",
+    "benchmark": "XLK",
+    "peers": [
+      "MU",
+      "WDC",
+      "STX"
+    ]
   },
   {
     "ticker": "WDC",
     "name": "Western Digital",
     "exchange": "NASDAQ",
     "query": "\"Western Digital\" OR \"NASDAQ:WDC\"",
-    "match": "Western\\ Digital|WDC"
+    "match": "Western\\ Digital|WDC",
+    "sector": "Technology",
+    "industry": "Computer Hardware",
+    "benchmark": "XLK",
+    "peers": [
+      "STX",
+      "SNDK",
+      "MU"
+    ]
   },
   {
     "ticker": "TTWO",
     "name": "Take-Two Interactive Software,",
     "exchange": "NASDAQ",
     "query": "\"Take-Two Interactive Software,\" OR \"NASDAQ:TTWO\"",
-    "match": "Take\\-Two\\ Interactive\\ Software,|TTWO"
+    "match": "Take\\-Two\\ Interactive\\ Software,|TTWO",
+    "sector": "Communication Services",
+    "industry": "Electronic Gaming & Multimedia",
+    "benchmark": "XLC",
+    "peers": [
+      "EA",
+      "RBLX",
+      "NTDOY"
+    ]
   },
   {
     "ticker": "MU",
     "name": "Micron Technology",
     "exchange": "NASDAQ",
     "query": "\"Micron Technology\" OR \"NASDAQ:MU\"",
-    "match": "Micron\\ Technology|MU"
+    "match": "Micron\\ Technology|MU",
+    "sector": "Technology",
+    "industry": "Semiconductors",
+    "benchmark": "SMH",
+    "peers": [
+      "SNDK",
+      "WDC",
+      "NVDA"
+    ]
   },
   {
     "ticker": "SOBKY",
     "name": "Softbank",
     "exchange": "OTC Markets",
     "query": "\"Softbank\" OR \"OTC Markets:SOBKY\"",
-    "match": "Softbank|SOBKY"
+    "match": "Softbank|SOBKY",
+    "sector": "Communication Services",
+    "industry": "Telecom Services",
+    "benchmark": "XLC",
+    "peers": []
   },
   {
     "ticker": "SPCX",
     "name": "Space Exploration Technologies",
     "exchange": "NASDAQ",
     "query": "\"Space Exploration Technologies\" OR \"NASDAQ:SPCX\"",
-    "match": "Space\\ Exploration\\ Technologies|SPCX"
+    "match": "Space\\ Exploration\\ Technologies|SPCX",
+    "sector": "Industrials",
+    "industry": "Aerospace & Defense",
+    "benchmark": "ITA",
+    "peers": [
+      "RKLB",
+      "ASTS",
+      "LMT"
+    ]
   }
 ]
