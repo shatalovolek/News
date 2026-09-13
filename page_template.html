@@ -149,11 +149,12 @@ footer{margin-top:28px;font-size:12px;color:var(--muted);line-height:1.6;max-wid
 .rel .verdict{font-size:14px;line-height:1.45;margin-top:8px;padding:8px 12px;background:var(--bg);border-radius:3px}
 .rel svg{width:100%;height:auto;display:block;overflow:visible}
 /* calendar + digest (summary) */
-.cal{list-style:none;margin:8px 0 0;padding:0;border-top:1px solid var(--line);columns:2;column-gap:28px}
-.cal li{display:grid;grid-template-columns:96px 1fr;gap:10px;padding:8px 0;border-bottom:1px solid var(--line-soft);font-size:14px;line-height:1.35;break-inside:avoid}
-.cal .cd{font-family:var(--font-mono);font-size:12px;color:var(--muted);padding-top:2px;font-variant-numeric:tabular-nums}
-.cal .cd b{display:block;color:var(--ink);font-weight:500}
-.cal .cs{font-size:12px;color:var(--muted);display:block;margin-top:1px}
+.cal{width:100%;border-collapse:collapse;margin:8px 0 0;font-size:13.5px}
+.cal th{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);text-align:left;font-weight:500;padding:4px 10px 4px 0;border-bottom:1px solid var(--line)}
+.cal td{padding:7px 10px 7px 0;border-bottom:1px solid var(--line-soft);vertical-align:top;line-height:1.35}
+.cal .cd{font-family:var(--font-mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.cal .cd b{color:var(--ink);font-weight:500;font-family:var(--font-body);font-size:13.5px;margin-right:6px}
+.cal .cs{font-size:12px;color:var(--muted)}
 .cal .cob{margin-right:6px}
 .digest{background:var(--surface);border:1px solid var(--line);padding:16px 18px 14px;margin-top:8px}
 .digest .hl{font-family:var(--font-display);font-size:21px;font-weight:600;line-height:1.25;margin:0 0 8px;text-wrap:balance}
@@ -166,7 +167,7 @@ footer{margin-top:28px;font-size:12px;color:var(--muted);line-height:1.6;max-wid
 .digest small{font-family:var(--font-mono);font-size:11.5px;color:var(--muted)}
 .bnew{font-size:14px;line-height:1.45;margin:0 0 10px;padding:8px 12px;border-left:3px solid var(--accent);background:var(--bg)}
 .bnew b{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);font-weight:500;display:block;margin-bottom:2px}
-@media (max-width:760px){.secgrid,.relgrid,.dgrid{grid-template-columns:1fr}.cal{columns:1}}
+@media (max-width:760px){.secgrid,.relgrid,.dgrid{grid-template-columns:1fr}}
 /* short interest */
 .short{background:var(--surface);border:1px solid var(--line);border-top:0;padding:14px 16px 12px}
 .short-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px}
@@ -303,7 +304,7 @@ h2.sec small{font-family:var(--font-mono);font-size:12px;color:var(--muted);font
   <div class="overview" id="overview"></div>
   <div id="digestwrap" hidden><h2 class="sec">Week in review <small id="digest-note"></small></h2><div class="digest" id="digest"></div></div>
   <h2 class="sec" id="cal-h" hidden>Calendar <small>next 60 days, all companies</small></h2>
-  <ul class="cal" id="cal" hidden></ul>
+  <table class="cal" id="cal" hidden><thead><tr><th>Date</th><th>Ticker</th><th>Event</th><th>Source</th></tr></thead><tbody id="cal-body"></tbody></table>
   <h2 class="sec" id="briefs-h" hidden>Daily briefs <small id="briefs-note"></small></h2>
   <div class="briefs" id="briefs" hidden></div>
   <h2 class="sec">Most important news <small id="topnote"></small></h2>
@@ -449,8 +450,8 @@ function showSummary(){
   companies.forEach(c=>(c.calendar||[]).forEach(e=>{const d=new Date(e.date+'T12:00'); if(!isNaN(d)&&e.date>=todayK&&d<=limit) events.push({...e,co:c});}));
   events.sort((a,b)=>a.date.localeCompare(b.date)||a.co.ticker.localeCompare(b.co.ticker));
   document.getElementById('cal-h').hidden=!events.length; document.getElementById('cal').hidden=!events.length;
-  document.getElementById('cal').innerHTML=events.map(e=>{const d=new Date(e.date+'T12:00'); const days=Math.round((d-new Date(todayK+'T12:00'))/864e5);
-    return `<li><span class="cd"><b>${fmtD.format(d)}</b>${days===0?'today':days===1?'tomorrow':'in '+days+' days'}</span><span><button class="cob" data-t="${esc(e.co.ticker)}">${esc(e.co.ticker)}</button>${esc(e.what)}<span class="cs">${esc(e.source||'')}</span></span></li>`;}).join('');
+  document.getElementById('cal-body').innerHTML=events.map(e=>{const d=new Date(e.date+'T12:00'); const days=Math.round((d-new Date(todayK+'T12:00'))/864e5);
+    return `<tr><td class="cd"><b>${fmtD.format(d)}</b>${days===0?'today':days===1?'tomorrow':'in '+days+' days'}</td><td><button class="cob" data-t="${esc(e.co.ticker)}">${esc(e.co.ticker)}</button></td><td>${esc(e.what)}</td><td class="cs">${esc(e.source||'')}</td></tr>`;}).join('');
   document.querySelectorAll('#cal .cob').forEach(b=>b.onclick=()=>selectTab(b.dataset.t));
   // weekly digest
   const G=DATA.digest; const dw=document.getElementById('digestwrap'); dw.hidden=!(G&&G.data);
