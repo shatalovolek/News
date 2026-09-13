@@ -431,7 +431,7 @@ function show(c){
   renderTiles(c); renderBrief(c); renderFunds(c); renderSocial(c); renderChart(c); buildFilters(c); render();
 }
 
-const FUND_LABELS=[['market_cap','Market cap','Total value of all shares'],['pe','P/E','Price / earnings per share, trailing 12 months'],['fwd_pe','Forward P/E','Price / expected earnings next fiscal year'],['peg','PEG','P/E divided by expected earnings growth'],['ps','P/S','Price / sales per share'],['pb','P/B','Price / book value per share'],['ev_ebitda','EV/EBITDA','Enterprise value / EBITDA'],['eps','EPS (ttm)','Earnings per share, trailing 12 months'],['revenue','Revenue (ttm)',''],['net_income','Net income (ttm)',''],['rev_growth','Revenue growth','Year over year, trailing 12 months'],['gross_margin','Gross margin',''],['oper_margin','Operating margin',''],['net_margin','Net margin',''],['roe','ROE','Return on equity'],['debt_equity','Debt / equity',''],['div_yield','Dividend yield',''],['beta','Beta','Volatility vs the market (1 = market)'],['range_52w','52-week range',''],['short_float','Short float','Share of float sold short'],['target','Analyst target',''],['earnings','Next earnings',''],['perf_year','1-year change','']];
+const FUND_LABELS=[['market_cap','Market cap','Total value of all shares'],['pe','P/E','Price / earnings per share, trailing 12 months'],['fwd_pe','Forward P/E','Price / expected earnings next fiscal year'],['peg','PEG','P/E divided by expected earnings growth'],['ps','P/S','Price / sales per share'],['pb','P/B','Price / book value per share'],['ev_ebitda','EV/EBITDA','Enterprise value / EBITDA'],['eps','EPS (ttm)','Earnings per share, trailing 12 months'],['revenue','Revenue (ttm)',''],['net_income','Net income (ttm)',''],['rev_growth','Revenue growth','Year over year, trailing 12 months'],['gross_margin','Gross margin',''],['oper_margin','Operating margin',''],['net_margin','Net margin',''],['roe','ROE','Return on equity'],['debt_equity','Debt / equity',''],['div_yield','Dividend yield',''],['beta','Beta','Volatility vs the market (1 = market)'],['range_52w','52-week range',''],['short_float','Short float','Share of float sold short'],['target','Analyst target',''],['earnings','Next earnings','Estimated until the company confirms it'],['perf_year','1-year change','']];
 function fundClass(k,v){ if(!/^-?\d/.test(v)) return ''; if(['rev_growth','net_margin','oper_margin','gross_margin','roe','perf_year','eps','net_income'].includes(k)) return v.trim().startsWith('-')?'down':'up'; return ''; }
 function renderBrief(c){
   const sec=document.getElementById('brief'), B=c.brief;
@@ -453,6 +453,7 @@ function renderFunds(c){
   document.getElementById('funds-note').textContent=`${f.source} · as of ${fmtD.format(new Date(f.as_of))}`;
   document.getElementById('fgrid').innerHTML=FUND_LABELS.filter(([k])=>f.values[k]).map(([k,l,tip])=>{
     const v=f.values[k]; const small=v.length>10;
+    if(k==='earnings'){ const d=new Date(v); if(!isNaN(d)&&d<new Date(Date.now()-864e5)) l='Last earnings'; }
     return `<div class="f" ${tip?`title="${esc(tip)}"`:''}><div class="k">${l}</div><div class="v ${fundClass(k,v)} ${small?'small':''}">${esc(v)}</div></div>`;}).join('');
 }
 function renderSocial(c){

@@ -373,6 +373,15 @@ def fundamentals_file(ticker):
     return os.path.join(OUT_DIR, f"fundamentals_{ticker}.json")
 
 
+def _next_earnings(ticker):
+    """StockAnalysis' 'Earnings Date' is the next (estimated or confirmed) report; Finviz's
+    'Earnings' is the last one until the next is confirmed."""
+    try:
+        return _stockanalysis(ticker).get("earnings")
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def fetch_fundamentals(ticker):
     """Valuation and quality figures as display strings. Finviz first, StockAnalysis second,
     the last successful copy on disk third. Returns {"source":..., "as_of":..., "values":{...}}."""
@@ -380,6 +389,11 @@ def fetch_fundamentals(ticker):
         try:
             vals = fn(ticker)
             vals = {k: v for k, v in vals.items() if v not in (None, "", "-", "- -", "n/a", "N/A")}
+            if vals and name == "Finviz":
+                nxt = _next_earnings(ticker)
+                if nxt:
+                    vals["earnings_last"] = vals.get("earnings")
+                    vals["earnings"] = nxt
             if vals:
                 data = {"source": name, "as_of": dt.datetime.now().astimezone().isoformat(),
                         "values": vals}
