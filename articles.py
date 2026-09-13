@@ -12,6 +12,8 @@ import json
 import os
 import re
 import sys
+import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 
 import requests
@@ -23,8 +25,14 @@ DAYS = 3
 MIN_CHARS = 400        # shorter extractions are treated as failed (paywall stubs, cookie walls)
 KEEP_CHARS = 6000
 MIN_IMPORTANCE = 2.5
-RETRY_HOURS = 24
+RETRY_HOURS = 24          # failed page fetches are retried after this long
+RETRY_UNRESOLVED_HOURS = 2  # link decoding failures (Google rate limits) are retried sooner
 WORKERS = 4
+DECODE_GAP = 3.0          # seconds between Google decode calls (Google returns 429 on bursts)
+DECODE_BUDGET = 15        # Google decodes per process run, across all companies
+_decode_lock = threading.Lock()
+_last_decode = [0.0]
+_decodes_left = [DECODE_BUDGET]
 
 
 def articles_file(out_dir, ticker):
@@ -65,7 +73,21 @@ def decode_google(url):
 
 def resolve(url):
     if "news.google.com" in url:
-        return decode_google(url)
+        with _decode_lock:                       # one decode at a time, spaced out, limited per run
+            if _decodes_left[0] <= 0:
+                return None
+            wait = DECODE_GAP - (time.time() - _last_decode[0])
+            if wait > 0:
+                time.sleep(wait)
+            try:
+                real = decode_google(url)
+                if real is None:
+                    _decodes_left[0] = min(_decodes_left[0], 2)   # probably rate-limited: back off for this run
+                else:
+                    _decodes_left[0] -= 1
+                return real
+            finally:
+                _last_decode[0] = time.time()
     return url
 
 
@@ -77,11 +99,11 @@ def extract(html):
     return trafilatura.extract(html, include_comments=False, include_tables=False, favor_precision=True)
 
 
-def read_one(link):
-    """Returns a cache record for one headline link."""
-    rec = {"fetched": dt.datetime.now().astimezone().isoformat(), "ok": False, "url": None, "chars": 0, "text": "", "error": None}
+def read_one(link, known_url=None):
+    """Returns a cache record for one headline link. known_url skips the Google decode on retries."""
+    rec = {"fetched": dt.datetime.now().astimezone().isoformat(), "ok": False, "url": known_url, "chars": 0, "text": "", "error": None}
     try:
-        real = resolve(link)
+        real = known_url or resolve(link)
         if not real:
             rec["error"] = "could not resolve link"
             return rec
@@ -103,14 +125,20 @@ def read_one(link):
 
 def candidates(hist, store, days=DAYS):
     cutoff = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)).isoformat()
-    retry_before = (dt.datetime.now().astimezone() - dt.timedelta(hours=RETRY_HOURS)).isoformat()
+    now = dt.datetime.now().astimezone()
+    retry_before = (now - dt.timedelta(hours=RETRY_HOURS)).isoformat()
+    retry_unresolved_before = (now - dt.timedelta(hours=RETRY_UNRESOLVED_HOURS)).isoformat()
     out = []
     for h in sorted([h for h in hist if h["time"] >= cutoff], key=lambda h: (-h.get("importance", 0), h["time"]), reverse=False):
         if h.get("importance", 0) < MIN_IMPORTANCE:
             continue
         rec = store.get(h["link"])
-        if rec and (rec.get("ok") or rec.get("fetched", "") > retry_before):
-            continue
+        if rec:
+            if rec.get("ok"):
+                continue
+            limit = retry_unresolved_before if (rec.get("error") or "").startswith("could not resolve") else retry_before
+            if rec.get("fetched", "") > limit:
+                continue
         out.append(h)
     out.sort(key=lambda h: -h.get("importance", 0))
     return out
@@ -123,7 +151,7 @@ def update_articles(company, hist, out_dir, max_new=MAX_NEW):
     todo = candidates(hist, store)[:max_new]
     if todo:
         with ThreadPoolExecutor(max_workers=WORKERS) as ex:
-            for h, rec in zip(todo, ex.map(lambda h: read_one(h["link"]), todo)):
+            for h, rec in zip(todo, ex.map(lambda h: read_one(h["link"], (store.get(h["link"]) or {}).get("url")), todo)):
                 rec["title"] = h["title"]
                 rec["source"] = h["source"]
                 store[h["link"]] = rec

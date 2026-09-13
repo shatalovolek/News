@@ -261,12 +261,17 @@ def collect_news(company, hours):
         all_items.extend(fetch_feed(name, url))
     now = dt.datetime.now(dt.timezone.utc)
     cutoff = now - dt.timedelta(hours=hours)
-    seen, fresh = set(), []
+    seen, fresh = {}, []
     for it in sorted(all_items, key=lambda x: x["time"], reverse=True):
         key = norm(it["title"])
-        if key in seen or it["time"] < cutoff or not relevant(company, it["title"]):
+        if it["time"] < cutoff or not relevant(company, it["title"]):
             continue
-        seen.add(key)
+        if key in seen:
+            kept = seen[key]
+            if "news.google.com" in kept["link"] and "news.google.com" not in it["link"]:
+                kept["link"] = it["link"]          # direct publisher link beats a Google redirect
+            continue
+        seen[key] = it
         it["score"] = len(POS_RE.findall(it["title"])) - len(NEG_RE.findall(it["title"]))
         it["importance"] = importance(it)
         fresh.append(it)

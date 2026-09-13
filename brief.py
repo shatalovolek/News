@@ -261,10 +261,12 @@ def weekly_digest(companies, per_company_text, out_dir, force=False):
             existing = json.load(f)
     except Exception:  # noqa: BLE001
         existing = None
+    briefs_now = sum(t.count("- brief ") for t in per_company_text)
     if existing and not force:
         try:
             age = (dt.datetime.now().astimezone() - dt.datetime.fromisoformat(existing["generated"])).total_seconds() / 86400
-            if age < 6:
+            # regenerate early once when the previous digest was written before any briefs existed
+            if age < 6 and not (existing.get("briefs_seen", 1) == 0 and briefs_now > 0 and age > 0.1):
                 return existing
         except Exception:  # noqa: BLE001
             pass
@@ -288,6 +290,7 @@ def weekly_digest(companies, per_company_text, out_dir, force=False):
             existing["error"] = f"{type(e).__name__}: {str(e)[:120]}"
         return existing
     result = {"generated": now.isoformat(), "week_ending": now.strftime("%Y-%m-%d"), "model": response.model, "error": None,
+              "briefs_seen": briefs_now,
               "usage": {"input": response.usage.input_tokens, "output": response.usage.output_tokens}, "data": data}
     with open(path, "w") as f:
         json.dump(result, f, ensure_ascii=False, indent=1)
