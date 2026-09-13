@@ -129,5 +129,35 @@
       "ASTS",
       "LMT"
     ]
+  },
+  {
+    "ticker": "NBIS",
+    "name": "Nebius Group",
+    "exchange": "NASDAQ",
+    "query": "\"Nebius Group\" OR \"NASDAQ:NBIS\"",
+    "match": "Nebius\\ Group|NBIS",
+    "sector": "Communication Services",
+    "industry": "Internet Content & Information",
+    "benchmark": "IGV",
+    "peers": [
+      "CRWV",
+      "IREN",
+      "CORZ"
+    ]
+  },
+  {
+    "ticker": "CRWV",
+    "name": "CoreWeave",
+    "exchange": "NASDAQ",
+    "query": "\"CoreWeave\" OR \"NASDAQ:CRWV\"",
+    "match": "CoreWeave|CRWV",
+    "sector": "Technology",
+    "industry": "Software—Infrastructure",
+    "benchmark": "IGV",
+    "peers": [
+      "NBIS",
+      "ORCL",
+      "IREN"
+    ]
   }
 ]

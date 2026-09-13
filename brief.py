@@ -65,6 +65,7 @@ Rules:
 - When ARTICLE TEXT is given for a headline id, prefer the article's facts over the headline's wording; quote numbers from it.
 - SEC filings and insider transactions in the input are official; an open-market insider buy or sale is always worth a mention.
 - Relative performance tells you whether a move was company-specific or sector-wide; say which.
+- Short interest above ~10% of float, or a sharp change between reports, is worth one sentence; otherwise leave it out.
 - Write in {language}. Keep the summary under 120 words."""
 
 

@@ -194,6 +194,11 @@ def absorb_upload(payload, out_dir):
             merge_into(store, key, payload[key])
     if payload.get("trends"):
         store["trends"] = payload["trends"]
+    if payload.get("short"):
+        import shorts as _shorts
+        merged = _shorts.merge(_shorts.load(out_dir, t), payload["short"])
+        with open(_shorts.short_file(out_dir, t), "w") as f:
+            json.dump(merged, f)
     if payload.get("articles"):
         import articles as _articles
         merged = _articles.merge_store(_articles.load(out_dir, t), payload["articles"])
@@ -214,7 +219,7 @@ def push_store(store, ticker, url, token, source="mac"):
     """Client side: send this company's social store to the server."""
     payload = {"ticker": ticker, "source": source, "stocktwits": store.get("stocktwits", []),
                "reddit": store.get("reddit", []), "trends": store.get("trends", []),
-               "articles": store.get("articles") or {}}
+               "articles": store.get("articles") or {}, "short": store.get("short") or None}
     r = requests.post(url.rstrip("/") + "/api/social/upload", json=payload,
                       headers={"X-Upload-Token": token, "User-Agent": UA}, timeout=60)
     r.raise_for_status()

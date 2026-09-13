@@ -36,6 +36,7 @@ import brief
 import edgar
 import relative
 import articles
+import shorts
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT_DIR = os.environ.get("DATA_DIR") or os.path.join(HERE, "output")   # Render: mount a disk at /data
@@ -374,6 +375,10 @@ FUND_FIELDS = [
     ("beta",        "Beta",           "Beta (5Y)",              "x"),
     ("range_52w",   "52W Range",      "52-Week Range",          "text"),
     ("short_float", "Short Float",    "Short % of Float",       "pct"),
+    ("short_ratio", "Short Ratio",    "Short Ratio (days to cover)", "x"),
+    ("short_shares","Short Interest", "Short Interest",         "shares"),
+    ("float_shares","Shs Float",      "Float",                  "shares"),
+    ("shares_out",  "Shs Outstand",   "Shares Outstanding",     "shares"),
     ("target",      "Target Price",   "Price Target",           "usd"),
     ("earnings",    "Earnings",       "Earnings Date",          "text"),
     ("perf_year",   "Perf Year",      "52-Week Price Change",   "pct"),
@@ -710,6 +715,7 @@ def build_page(companies, results):
             "social": social.summarize(social._load(social.social_file(OUT_DIR, c["ticker"]))),
             "brief": brief.load_brief(OUT_DIR, c["ticker"]),
             "edgar": edgar.summarize(edgar._load(OUT_DIR, c["ticker"])),
+            "short": shorts.summarize(shorts.load(OUT_DIR, c["ticker"])),
             "relative": load_relative(c["ticker"]),
             "calendar": calendar_for(c),
             "benchmark": c.get("benchmark"), "peers": c.get("peers", []),
@@ -770,6 +776,11 @@ def run_all(hours=24, backfill=False, only=None, verbose=True, pictures=True, pu
         price = fetch_price(c["ticker"])
         series_cache[c["ticker"]] = (price or {}).get("series") or []
         fund = fetch_fundamentals(c["ticker"])
+        # short interest (Finviz snapshot + Nasdaq/FINRA series)
+        try:
+            shorts.update_short(c, (fund or {}).get("values"), OUT_DIR)
+        except Exception as e:  # noqa: BLE001
+            print(f"[warn] short interest for {c['ticker']} failed: {e}", file=sys.stderr)
         # SEC filings + insiders
         try:
             edgar.update_edgar(c, OUT_DIR)
@@ -793,6 +804,7 @@ def run_all(hours=24, backfill=False, only=None, verbose=True, pictures=True, pu
             if push:
                 try:
                     store["articles"] = articles.load(OUT_DIR, c["ticker"])   # publishers rarely block a home connection
+                    store["short"] = shorts.load(OUT_DIR, c["ticker"])         # Nasdaq's API may block the server too
                     msg = social.push_store(store, c["ticker"], push["url"], push["token"])
                     if verbose:
                         print(f"    pushed social -> {msg.get('message')}")
@@ -815,7 +827,8 @@ def run_all(hours=24, backfill=False, only=None, verbose=True, pictures=True, pu
             try:
                 soc = social.summarize(social._load(social.social_file(OUT_DIR, c["ticker"])))
                 extra = [brief.edgar_block(edgar.summarize(edgar._load(OUT_DIR, c["ticker"]))),
-                         relative.describe(load_relative(c["ticker"]))]
+                         relative.describe(load_relative(c["ticker"])),
+                         shorts.describe(shorts.summarize(shorts.load(OUT_DIR, c["ticker"])))]
                 b = brief.generate(c, hist, soc, price, fund, OUT_DIR, force=force_brief, extra=extra, art_store=art_store)
                 if verbose and b and b.get("data"):
                     print(f"    brief: {b['data']['tone']} · {b['data']['summary'][:90]}…")
