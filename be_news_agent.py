@@ -31,6 +31,8 @@ from email.utils import parsedate_to_datetime
 import requests
 from PIL import Image, ImageDraw, ImageFont
 
+import social
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT_DIR = os.environ.get("DATA_DIR") or os.path.join(HERE, "output")   # Render: mount a disk at /data
 HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh) stock-news-agent/1.0"}
@@ -644,6 +646,7 @@ def build_page(companies, results):
         data["companies"].append({
             "ticker": c["ticker"], "name": c["name"], "exchange": c["exchange"],
             "fundamentals": fund,
+            "social": social.summarize(social._load(social.social_file(OUT_DIR, c["ticker"]))),
             "ytd_change_pct": (price or {}).get("ytd_change_pct"),
             "closes": (price or {}).get("series", []),
             "items": [{"title": h["title"], "link": h["link"], "source": h["source"],
@@ -676,6 +679,10 @@ def run_all(hours=24, backfill=False, only=None, verbose=True, pictures=True):
             items = collect_news(c, win)
         price = fetch_price(c["ticker"])
         fund = fetch_fundamentals(c["ticker"])
+        try:
+            social.update_social(c, OUT_DIR)
+        except Exception as e:  # noqa: BLE001
+            print(f"[warn] social for {c['ticker']} failed: {e}", file=sys.stderr)
         if backfill or not os.path.exists(history_file(c["ticker"])):
             hist = update_history(c, collect_news(c, 24 * 30))   # first run: pull everything the feeds hold
         else:

@@ -93,6 +93,19 @@ From then on every add/remove on the site is committed to `companies.json` with
 starts from the updated list. The add panel warns when persistence is off.
 With the disk in place the token is optional; it only adds a copy of the list in the repo.
 
+## Social section (StockTwits, Reddit, Google Trends)
+Each company tab has a "Social" block: StockTwits messages in the last 24 h and 7 days with the
+bullish share (from the tags users set themselves), Reddit posts and upvotes in the big finance
+subreddits, a buzz ratio (last 24 h vs the average fully-covered day), a 30-day mentions chart,
+Google search interest for 90 days, and the top posts. Data accumulates with every refresh
+(`output/social_<TICKER>.json`, 30 days kept).
+
+Reddit needs a free API app: https://www.reddit.com/prefs/apps → create app → type **script**,
+redirect URI `http://localhost`. Put the id (under the app name) and the secret into Render →
+Environment as `REDDIT_CLIENT_ID` and `REDDIT_CLIENT_SECRET`. Without them Reddit is skipped.
+Google Trends uses the unofficial pytrends client; when Google rate-limits the server the
+previous series is kept.
+
 ## Sources
 Google News RSS (query "Bloom Energy" OR "NYSE:BE") and Yahoo Finance headline RSS,
 de‑duplicated; price from Yahoo Finance chart API. No API keys needed.

@@ -22,4 +22,6 @@ services:
         value: Europe/Vienna
       - key: DATA_DIR             # everything the agent writes lives on the disk
         value: /data
-      # Optional: GITHUB_TOKEN (set in the dashboard, never here) also commits companies.json to the repo.
+      # Optional, set in the dashboard, never here:
+      #   GITHUB_TOKEN          also commits companies.json to the repo
+      #   REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET   enable Reddit in the Social section

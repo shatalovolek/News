@@ -97,6 +97,30 @@ footer{margin-top:28px;font-size:12px;color:var(--muted);line-height:1.6;max-wid
 .f .v.small{font-size:15px;font-family:var(--font-mono);font-weight:500}
 .co .fr{grid-column:1/-1;font-family:var(--font-mono);font-size:11.5px;color:var(--muted);margin-top:4px;display:flex;flex-wrap:wrap;gap:4px 12px}
 .co .fr b{font-weight:500;color:var(--ink)}
+/* social */
+.social{background:var(--surface);border:1px solid var(--line);border-top:0;padding:14px 16px 12px}
+.social-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px}
+.social-head h2{font-family:var(--font-display);font-size:18px;font-weight:600;margin:0}
+.social-head small{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line-soft);border:1px solid var(--line-soft);margin-top:10px}
+.sgrid .f .v{font-size:22px}.sgrid .f .sub{font-size:12px;color:var(--muted);margin-top:2px}
+.bull{color:var(--pos)}.bear{color:var(--neg)}
+.scharts{display:grid;grid-template-columns:3fr 2fr;gap:16px;margin-top:14px}
+.schart h3{font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px;font-weight:500}
+.schart svg{width:100%;height:auto;display:block;overflow:visible}
+.slegend{display:flex;gap:14px;font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-top:4px}
+.slegend i{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:-1px;margin-right:5px}
+.posts{display:grid;grid-template-columns:1fr 1fr;gap:16px 28px;margin-top:16px}
+.posts h3{font-family:var(--font-display);font-size:15px;font-weight:600;margin:0 0 4px}
+.posts ul{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.posts li{padding:8px 0;border-bottom:1px solid var(--line-soft);font-size:14px;line-height:1.35;display:grid;grid-template-columns:4px 1fr;gap:10px}
+.posts li .s{background:var(--neu);border-radius:2px}.posts li.bull .s{background:var(--pos)}.posts li.bear .s{background:var(--neg)}
+.posts li a{text-decoration:none}.posts li a:hover{text-decoration:underline}
+.posts li .m{font-size:11.5px;color:var(--muted);font-family:var(--font-mono);margin-top:2px}
+.posts .note{font-size:13px;color:var(--muted);padding:8px 0}
+.co .so{grid-column:1/-1;font-family:var(--font-mono);font-size:11.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 12px}
+.co .so b{font-weight:500;color:var(--ink)}
+@media (max-width:760px){.scharts{grid-template-columns:1fr}.posts{grid-template-columns:1fr}}
 /* summary view */
 .overview{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin-top:20px}
 .co{background:var(--surface);border:1px solid var(--line);padding:14px 16px;cursor:pointer;text-align:left;font:inherit;color:inherit;display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:end}
@@ -197,6 +221,16 @@ h2.sec small{font-family:var(--font-mono);font-size:12px;color:var(--muted);font
   <div class="funds-head"><h2>Fundamentals</h2><small id="funds-note"></small></div>
   <div class="fgrid" id="fgrid"></div>
 </section>
+<section class="social" id="social" hidden>
+  <div class="social-head"><h2>Social</h2><small id="social-note"></small></div>
+  <div class="sgrid" id="sgrid"></div>
+  <div class="scharts">
+    <div class="schart"><h3>Mentions per day, 30 days</h3><svg id="schart" viewBox="0 0 660 150" role="img" aria-label="Mentions per day"></svg>
+      <div class="slegend"><span><i style="background:var(--pos)"></i>bullish</span><span><i style="background:var(--neg)"></i>bearish</span><span><i style="background:var(--neu)"></i>untagged</span><span><i style="background:var(--accent)"></i>Reddit</span></div></div>
+    <div class="schart"><h3>Google search interest, 90 days</h3><svg id="tchart" viewBox="0 0 440 150" role="img" aria-label="Google Trends"></svg></div>
+  </div>
+  <div class="posts"><div><h3>Top on Reddit</h3><ul id="rdposts"></ul></div><div><h3>Most liked on StockTwits</h3><ul id="stposts"></ul></div></div>
+</section>
 <section class="chart">
   <div class="chart-head"><h2 id="chart-title">Share price and news volume, last 90 days</h2>
     <div class="legend"><span><i></i>close (USD)</span><span><i class="bar"></i>headlines per day</span></div></div>
@@ -213,7 +247,7 @@ h2.sec small{font-family:var(--font-mono);font-size:12px;color:var(--muted);font
 <div id="timeline"></div>
 </div>
 
-<footer>Fundamentals: Finviz or StockAnalysis, refreshed with the news; trailing-twelve-month figures where applicable. Sources: Google News and Yahoo Finance RSS, de-duplicated, collected several times a day for every tracked company. "Most important" ranks headlines by a heuristic: real events (earnings, deals, lawsuits, launches) from major outlets score high; holdings filings, listicles and stock-tip pieces score low. Tone tags come from a keyword heuristic on the headline and are a reading aid, not investment advice. Times are shown in your local time zone.</footer>
+<footer>Social: StockTwits public stream (bullish/bearish tags are set by the posters), Reddit finance subreddits via the official API, Google Trends (relative search interest, 100 = peak of the period). Fundamentals: Finviz or StockAnalysis, refreshed with the news; trailing-twelve-month figures where applicable. Sources: Google News and Yahoo Finance RSS, de-duplicated, collected several times a day for every tracked company. "Most important" ranks headlines by a heuristic: real events (earnings, deals, lawsuits, launches) from major outlets score high; holdings filings, listicles and stock-tip pieces score low. Tone tags come from a keyword heuristic on the headline and are a reading aid, not investment advice. Times are shown in your local time zone.</footer>
 </div>
 
 <script id="data" type="application/json">__DATA__</script>
@@ -283,6 +317,7 @@ function showSummary(){
     const week=c.items.filter(i=>now-i.d<7*864e5), t=c.items.filter(i=>dayKey(i.d)===today).length;
     return `<button class="co" data-t="${esc(c.ticker)}"><span class="nm">${esc(c.name)}</span><span class="tk">${esc(c.exchange)}: ${esc(c.ticker)}</span>
       <span class="px">${c.last?'$'+c.last.c.toFixed(2):'—'}</span>${spark(c.closes)}<span class="dc"><span class="${cls(c.dayPct)}">${pct(c.dayPct)} today</span> · <span class="${cls(c.ytd_change_pct)}">${pct(c.ytd_change_pct)} YTD</span></span>
+      ${c.social&&c.social.last24?`<span class="so"><span>StockTwits 24h <b>${c.social.last24.st}</b></span>${c.social.last24.bull_share!=null?`<span>bullish <b class="${c.social.last24.bull_share>=60?'up':c.social.last24.bull_share<=40?'down':''}">${c.social.last24.bull_share}%</b></span>`:''}${c.social.buzz!=null?`<span>buzz <b>×${c.social.buzz.toFixed(1)}</b></span>`:''}${c.social.reddit_configured?`<span>Reddit 7d <b>${c.social.last7.rd}</b></span>`:''}</span>`:''}
       ${c.fundamentals&&c.fundamentals.values?`<span class="fr">${[['market_cap','Cap'],['pe','P/E'],['fwd_pe','Fwd P/E'],['ps','P/S'],['ev_ebitda','EV/EBITDA']].filter(([k])=>c.fundamentals.values[k]).map(([k,l])=>`<span>${l} <b>${esc(c.fundamentals.values[k])}</b></span>`).join('')}</span>`:''}
       <span class="cnt">${t} headline${t===1?'':'s'} today · ${week.length} this week · <span class="up">${week.filter(i=>i.score>0).length}</span>/<span class="down">${week.filter(i=>i.score<0).length}</span></span></button>`;}).join('');
   document.querySelectorAll('.co').forEach(b=>b.onclick=()=>selectTab(b.dataset.t));
@@ -346,7 +381,7 @@ function show(c){
   document.getElementById('eyebrow').textContent = `${c.exchange}: ${c.ticker} · daily news log`;
   document.getElementById('h1').innerHTML = `${esc(c.name)} <span>Newsroom</span>`;
   document.getElementById('chart-title').textContent = `${c.ticker} share price and news volume, last 90 days`;
-  renderTiles(c); renderFunds(c); renderChart(c); buildFilters(c); render();
+  renderTiles(c); renderFunds(c); renderSocial(c); renderChart(c); buildFilters(c); render();
 }
 
 const FUND_LABELS=[['market_cap','Market cap','Total value of all shares'],['pe','P/E','Price / earnings per share, trailing 12 months'],['fwd_pe','Forward P/E','Price / expected earnings next fiscal year'],['peg','PEG','P/E divided by expected earnings growth'],['ps','P/S','Price / sales per share'],['pb','P/B','Price / book value per share'],['ev_ebitda','EV/EBITDA','Enterprise value / EBITDA'],['eps','EPS (ttm)','Earnings per share, trailing 12 months'],['revenue','Revenue (ttm)',''],['net_income','Net income (ttm)',''],['rev_growth','Revenue growth','Year over year, trailing 12 months'],['gross_margin','Gross margin',''],['oper_margin','Operating margin',''],['net_margin','Net margin',''],['roe','ROE','Return on equity'],['debt_equity','Debt / equity',''],['div_yield','Dividend yield',''],['beta','Beta','Volatility vs the market (1 = market)'],['range_52w','52-week range',''],['short_float','Short float','Share of float sold short'],['target','Analyst target',''],['earnings','Next earnings',''],['perf_year','1-year change','']];
@@ -359,6 +394,49 @@ function renderFunds(c){
   document.getElementById('fgrid').innerHTML=FUND_LABELS.filter(([k])=>f.values[k]).map(([k,l,tip])=>{
     const v=f.values[k]; const small=v.length>10;
     return `<div class="f" ${tip?`title="${esc(tip)}"`:''}><div class="k">${l}</div><div class="v ${fundClass(k,v)} ${small?'small':''}">${esc(v)}</div></div>`;}).join('');
+}
+function renderSocial(c){
+  const sec=document.getElementById('social'), S=c.social;
+  if(!S||!S.daily||(!S.last7.st&&!S.last7.rd&&!(S.trends||[]).length)){ sec.hidden=true; return; }
+  sec.hidden=false;
+  document.getElementById('social-note').textContent=S.updated?`updated ${fmtD.format(new Date(S.updated))} ${fmtT.format(new Date(S.updated))}`:'';
+  const b24=S.last24.bull_share, b7=S.last7.bull_share;
+  const shareCls=v=>v==null?'':v>=60?'bull':v<=40?'bear':'';
+  const buzzTxt=S.buzz==null?'collecting…':(S.buzz>=1?'×':'×')+S.buzz.toFixed(1);
+  const buzzCls=S.buzz==null?'':S.buzz>=2?'bull':S.buzz<0.5?'bear':'';
+  document.getElementById('sgrid').innerHTML=`
+    <div class="f"><div class="k">StockTwits, 24 h</div><div class="v">${S.last24.st}</div><div class="sub">${S.last7.st} in 7 days</div></div>
+    <div class="f"><div class="k">Bullish share, 24 h</div><div class="v ${shareCls(b24)}">${b24==null?'—':b24+'%'}</div><div class="sub">7 days: ${b7==null?'—':b7+'%'} · ${S.last7.bull}▲ ${S.last7.bear}▼ tagged</div></div>
+    <div class="f"><div class="k">Buzz vs average day</div><div class="v ${buzzCls}">${buzzTxt}</div><div class="sub">${S.buzz==null?'needs 3 full days of data':'mentions last 24 h / daily average'}</div></div>
+    <div class="f"><div class="k">Reddit, 7 days</div><div class="v">${S.reddit_configured?S.last7.rd:'—'}</div><div class="sub">${S.reddit_configured?`${S.last7.rd_score} upvotes · ${S.last7.rd_comments} comments`:'not connected yet'}</div></div>
+    <div class="f"><div class="k">Google interest</div><div class="v">${S.trend_now==null?'—':S.trend_now}</div><div class="sub">${S.trend_peak==null?'no data':`peak ${S.trend_peak} in 90 days`}</div></div>`;
+  // mentions chart: stacked bars per day
+  (function(){
+    const svg=document.getElementById('schart'), rows=S.daily, W=660,H=150,L=28,B=18,T=6;
+    const max=Math.max(1,...rows.map(r=>r.st+r.rd)); const bw=(W-L-4)/rows.length; const y=v=>T+(H-B-T)*(1-v/max);
+    let out=`<g class="grid"><line x1="${L}" x2="${W-4}" y1="${y(0)}" y2="${y(0)}"/><line x1="${L}" x2="${W-4}" y1="${y(max)}" y2="${y(max)}"/></g><text x="${L-6}" y="${y(max)+4}" text-anchor="end">${max}</text><text x="${L-6}" y="${y(0)+4}" text-anchor="end">0</text>`;
+    rows.forEach((r,i)=>{const x=L+i*bw+1, w=Math.max(2,bw-2); let top=0;
+      const seg=(n,col)=>{ if(!n) return; const h=(H-B-T)*n/max; out+=`<rect x="${x.toFixed(1)}" y="${(y(top+n)).toFixed(1)}" width="${w.toFixed(1)}" height="${Math.max(0,h-0.5).toFixed(1)}" fill="${col}"/>`; top+=n; };
+      seg(r.bull,'var(--pos)'); seg(r.bear,'var(--neg)'); seg(r.st-r.bull-r.bear,'var(--neu)'); seg(r.rd,'var(--accent)');
+      if(i%7===0||i===rows.length-1){ out+=`<text x="${(x+w/2).toFixed(1)}" y="${H-4}" text-anchor="middle">${fmtD.format(new Date(r.d+'T12:00'))}</text>`; }
+      out+=`<rect x="${x.toFixed(1)}" y="${T}" width="${w.toFixed(1)}" height="${H-B-T}" fill="transparent"><title>${fmtD.format(new Date(r.d+'T12:00'))}: ${r.st} StockTwits (${r.bull}▲ ${r.bear}▼), ${r.rd} Reddit</title></rect>`;});
+    svg.innerHTML=out;
+  })();
+  // trends line
+  (function(){
+    const svg=document.getElementById('tchart'), tr=S.trends||[], W=440,H=150,L=28,B=18,T=6;
+    if(tr.length<2){ svg.innerHTML=`<text x="${W/2}" y="${H/2}" text-anchor="middle">No Google Trends data yet</text>`; return; }
+    const x=i=>L+i*(W-L-4)/(tr.length-1), y=v=>T+(H-B-T)*(1-v/100);
+    const pts=tr.map((p,i)=>`${x(i).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ');
+    let out=`<g class="grid">${[0,50,100].map(v=>`<line x1="${L}" x2="${W-4}" y1="${y(v)}" y2="${y(v)}"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`).join('')}</g>`;
+    out+=`<polygon points="${x(0)},${y(0)} ${pts} ${x(tr.length-1)},${y(0)}" fill="var(--accent)" opacity=".10"/><polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>`;
+    const last=tr[tr.length-1]; out+=`<circle cx="${x(tr.length-1)}" cy="${y(last.v)}" r="4" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/>`;
+    [0,Math.floor(tr.length/2),tr.length-1].forEach(i=>{out+=`<text x="${x(i)}" y="${H-4}" text-anchor="${i===0?'start':i===tr.length-1?'end':'middle'}">${fmtD.format(new Date(tr[i].d+'T12:00'))}</text>`;});
+    svg.innerHTML=out;
+  })();
+  document.getElementById('rdposts').innerHTML=!S.reddit_configured?'<li class="note">Reddit is not connected yet: add REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET on the server (see README).</li>':
+    (S.top_reddit.length?S.top_reddit.map(p=>`<li><span class="s"></span><div><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a><div class="m">r/${esc(p.subreddit)} · ${p.score} points · ${p.comments} comments · ${fmtD.format(new Date(p.time))}</div></div></li>`).join(''):'<li class="note">No posts in the last 30 days.</li>');
+  document.getElementById('stposts').innerHTML=S.top_stocktwits.length?S.top_stocktwits.map(p=>`<li class="${p.sentiment==='Bullish'?'bull':p.sentiment==='Bearish'?'bear':''}"><span class="s"></span><div><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.body.replace(/\s+/g,' ').slice(0,140))}</a><div class="m">@${esc(p.user)} · ${p.likes} likes · ${p.followers} followers · ${p.sentiment||''} · ${fmtD.format(new Date(p.time))}</div></div></li>`).join(''):'<li class="note">No tagged messages yet.</li>';
 }
 function renderTiles(c){
   const {closes,last,dayPct,items} = c;
