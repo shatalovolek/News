@@ -226,10 +226,10 @@ h2.sec small{font-family:var(--font-mono);font-size:12px;color:var(--muted);font
   <div class="sgrid" id="sgrid"></div>
   <div class="scharts">
     <div class="schart"><h3>Mentions per day, 30 days</h3><svg id="schart" viewBox="0 0 660 150" role="img" aria-label="Mentions per day"></svg>
-      <div class="slegend"><span><i style="background:var(--pos)"></i>bullish</span><span><i style="background:var(--neg)"></i>bearish</span><span><i style="background:var(--neu)"></i>untagged</span><span><i style="background:var(--accent)"></i>Reddit</span></div></div>
+      <div class="slegend"><span><i style="background:var(--pos)"></i>bullish</span><span><i style="background:var(--neg)"></i>bearish</span><span><i style="background:var(--neu)"></i>untagged</span><span id="rdlegend"><i style="background:var(--accent)"></i>Reddit</span></div></div>
     <div class="schart"><h3>Google search interest, 90 days</h3><svg id="tchart" viewBox="0 0 440 150" role="img" aria-label="Google Trends"></svg></div>
   </div>
-  <div class="posts"><div><h3>Top on Reddit</h3><ul id="rdposts"></ul></div><div><h3>Most liked on StockTwits</h3><ul id="stposts"></ul></div></div>
+  <div class="posts" id="postcols"><div id="rdcol"><h3>Top on Reddit</h3><ul id="rdposts"></ul></div><div><h3>Most liked on StockTwits</h3><ul id="stposts"></ul></div></div>
 </section>
 <section class="chart">
   <div class="chart-head"><h2 id="chart-title">Share price and news volume, last 90 days</h2>
@@ -247,7 +247,7 @@ h2.sec small{font-family:var(--font-mono);font-size:12px;color:var(--muted);font
 <div id="timeline"></div>
 </div>
 
-<footer>Social: StockTwits public stream (bullish/bearish tags are set by the posters), Reddit finance subreddits via the official API, Google Trends (relative search interest, 100 = peak of the period). Fundamentals: Finviz or StockAnalysis, refreshed with the news; trailing-twelve-month figures where applicable. Sources: Google News and Yahoo Finance RSS, de-duplicated, collected several times a day for every tracked company. "Most important" ranks headlines by a heuristic: real events (earnings, deals, lawsuits, launches) from major outlets score high; holdings filings, listicles and stock-tip pieces score low. Tone tags come from a keyword heuristic on the headline and are a reading aid, not investment advice. Times are shown in your local time zone.</footer>
+<footer>Social: StockTwits public stream (bullish/bearish tags are set by the posters), Google Trends (relative search interest, 100 = peak of the period). Fundamentals: Finviz or StockAnalysis, refreshed with the news; trailing-twelve-month figures where applicable. Sources: Google News and Yahoo Finance RSS, de-duplicated, collected several times a day for every tracked company. "Most important" ranks headlines by a heuristic: real events (earnings, deals, lawsuits, launches) from major outlets score high; holdings filings, listicles and stock-tip pieces score low. Tone tags come from a keyword heuristic on the headline and are a reading aid, not investment advice. Times are shown in your local time zone.</footer>
 </div>
 
 <script id="data" type="application/json">__DATA__</script>
@@ -408,7 +408,7 @@ function renderSocial(c){
     <div class="f"><div class="k">StockTwits, 24 h</div><div class="v">${S.last24.st}</div><div class="sub">${S.last7.st} in 7 days</div></div>
     <div class="f"><div class="k">Bullish share, 24 h</div><div class="v ${shareCls(b24)}">${b24==null?'—':b24+'%'}</div><div class="sub">7 days: ${b7==null?'—':b7+'%'} · ${S.last7.bull}▲ ${S.last7.bear}▼ tagged</div></div>
     <div class="f"><div class="k">Buzz vs average day</div><div class="v ${buzzCls}">${buzzTxt}</div><div class="sub">${S.buzz==null?'needs 3 full days of data':'mentions last 24 h / daily average'}</div></div>
-    <div class="f"><div class="k">Reddit, 7 days</div><div class="v">${S.reddit_configured?S.last7.rd:'—'}</div><div class="sub">${S.reddit_configured?`${S.last7.rd_score} upvotes · ${S.last7.rd_comments} comments`:'not connected yet'}</div></div>
+    ${S.reddit_configured?`<div class="f"><div class="k">Reddit, 7 days</div><div class="v">${S.last7.rd}</div><div class="sub">${S.last7.rd_score} upvotes · ${S.last7.rd_comments} comments</div></div>`:''}
     <div class="f"><div class="k">Google interest</div><div class="v">${S.trend_now==null?'—':S.trend_now}</div><div class="sub">${S.trend_peak==null?'no data':`peak ${S.trend_peak} in 90 days`}</div></div>`;
   // mentions chart: stacked bars per day
   (function(){
@@ -434,7 +434,9 @@ function renderSocial(c){
     [0,Math.floor(tr.length/2),tr.length-1].forEach(i=>{out+=`<text x="${x(i)}" y="${H-4}" text-anchor="${i===0?'start':i===tr.length-1?'end':'middle'}">${fmtD.format(new Date(tr[i].d+'T12:00'))}</text>`;});
     svg.innerHTML=out;
   })();
-  document.getElementById('rdposts').innerHTML=!S.reddit_configured?'<li class="note">Reddit is not connected yet: add REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET on the server (see README).</li>':
+  document.getElementById('rdcol').hidden=!S.reddit_configured; document.getElementById('rdlegend').hidden=!S.reddit_configured;
+  document.getElementById('postcols').style.gridTemplateColumns=S.reddit_configured?'':'1fr';
+  document.getElementById('rdposts').innerHTML=!S.reddit_configured?'':
     (S.top_reddit.length?S.top_reddit.map(p=>`<li><span class="s"></span><div><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a><div class="m">r/${esc(p.subreddit)} · ${p.score} points · ${p.comments} comments · ${fmtD.format(new Date(p.time))}</div></div></li>`).join(''):'<li class="note">No posts in the last 30 days.</li>');
   document.getElementById('stposts').innerHTML=S.top_stocktwits.length?S.top_stocktwits.map(p=>`<li class="${p.sentiment==='Bullish'?'bull':p.sentiment==='Bearish'?'bear':''}"><span class="s"></span><div><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.body.replace(/\s+/g,' ').slice(0,140))}</a><div class="m">@${esc(p.user)} · ${p.likes} likes · ${p.followers} followers · ${p.sentiment||''} · ${fmtD.format(new Date(p.time))}</div></div></li>`).join(''):'<li class="note">No tagged messages yet.</li>';
 }

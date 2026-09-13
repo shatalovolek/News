@@ -107,9 +107,10 @@ collects StockTwits at home and uploads it to the site (`POST /api/social/upload
 same token is set on Render as `UPLOAD_TOKEN`. With `--push` the Mac also adopts the site's company
 list, so companies added on the site get StockTwits data too.
 
-Reddit needs a free API app: https://www.reddit.com/prefs/apps → create app → type **script**,
-redirect URI `http://localhost`. Put the id (under the app name) and the secret into Render →
-Environment as `REDDIT_CLIENT_ID` and `REDDIT_CLIENT_SECRET`. Without them Reddit is skipped.
+Reddit is switched off (decided 13 Sep 2026): Reddit now requires an approved Data API access
+request before any app can be created, and a site on a company domain may count as commercial.
+The code path stays in `social.py`; if approval is ever obtained, set `REDDIT_CLIENT_ID` and
+`REDDIT_CLIENT_SECRET` on Render and the Reddit tile, posts and legend reappear by themselves.
 Google Trends uses the unofficial pytrends client; when Google rate-limits the server the
 previous series is kept.
 

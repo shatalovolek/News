@@ -28,10 +28,38 @@
     "match": "SanDisk|Sandisk|SNDK"
   },
   {
-    "ticker": "SFTBY",
-    "name": "Softbank Group",
+    "ticker": "WDC",
+    "name": "Western Digital",
+    "exchange": "NASDAQ",
+    "query": "\"Western Digital\" OR \"NASDAQ:WDC\"",
+    "match": "Western\\ Digital|WDC"
+  },
+  {
+    "ticker": "TTWO",
+    "name": "Take-Two Interactive Software,",
+    "exchange": "NASDAQ",
+    "query": "\"Take-Two Interactive Software,\" OR \"NASDAQ:TTWO\"",
+    "match": "Take\\-Two\\ Interactive\\ Software,|TTWO"
+  },
+  {
+    "ticker": "MU",
+    "name": "Micron Technology",
+    "exchange": "NASDAQ",
+    "query": "\"Micron Technology\" OR \"NASDAQ:MU\"",
+    "match": "Micron\\ Technology|MU"
+  },
+  {
+    "ticker": "SOBKY",
+    "name": "Softbank",
     "exchange": "OTC Markets",
-    "query": "\"Softbank Group\" OR \"OTC Markets:SFTBY\"",
-    "match": "Softbank\\ Group|SFTBY"
+    "query": "\"Softbank\" OR \"OTC Markets:SOBKY\"",
+    "match": "Softbank|SOBKY"
+  },
+  {
+    "ticker": "SPCX",
+    "name": "Space Exploration Technologies",
+    "exchange": "NASDAQ",
+    "query": "\"Space Exploration Technologies\" OR \"NASDAQ:SPCX\"",
+    "match": "Space\\ Exploration\\ Technologies|SPCX"
   }
 ]
