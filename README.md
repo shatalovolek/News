@@ -100,6 +100,13 @@ subreddits, a buzz ratio (last 24 h vs the average fully-covered day), a 30-day 
 Google search interest for 90 days, and the top posts. Data accumulates with every refresh
 (`output/social_<TICKER>.json`, 30 days kept).
 
+**StockTwits is blocked for datacenter addresses** (Cloudflare challenge), so the server cannot read
+it. The Mac can: `install_schedule.sh` runs the agent every 2 hours (08:05–22:05) with `--push`, which
+collects StockTwits at home and uploads it to the site (`POST /api/social/upload`). Setup once:
+`push.json` next to the script holds `{"url": "https://news.beat-trade.com", "token": "..."}` and the
+same token is set on Render as `UPLOAD_TOKEN`. With `--push` the Mac also adopts the site's company
+list, so companies added on the site get StockTwits data too.
+
 Reddit needs a free API app: https://www.reddit.com/prefs/apps → create app → type **script**,
 redirect URI `http://localhost`. Put the id (under the app name) and the secret into Render →
 Environment as `REDDIT_CLIENT_ID` and `REDDIT_CLIENT_SECRET`. Without them Reddit is skipped.

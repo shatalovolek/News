@@ -139,31 +139,35 @@ def fetch_trends(name):
 
 
 # ------------------------------------------------------------ store + summary
-def update_social(company, out_dir):
+def merge_into(store, key, new):
+    """Merge a list of posts into store[key]: de-duplicate by id, refresh engagement, keep 30 days."""
+    if new is None:
+        return
+    cutoff = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=KEEP_DAYS)).isoformat()
+    by_id = {p["id"]: p for p in store.get(key, [])}
+    for p in new:
+        if p["id"] in by_id:
+            by_id[p["id"]].update({k: p[k] for k in ("likes", "score", "comments") if k in p})
+        else:
+            by_id[p["id"]] = p
+    store[key] = sorted([p for p in by_id.values() if p["time"] >= cutoff], key=lambda p: p["time"], reverse=True)
+
+
+def save_store(store, out_dir, ticker):
+    os.makedirs(out_dir, exist_ok=True)
+    with open(social_file(out_dir, ticker), "w") as f:
+        json.dump(store, f)
+
+
+def update_social(company, out_dir, max_pages=8):
     """Fetch everything for one company, merge into its store, return the store."""
     t = company["ticker"]
-    path = social_file(out_dir, t)
-    store = _load(path)
-    cutoff = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=KEEP_DAYS)).isoformat()
-
-    def merge(key, new):
-        if new is None:
-            return
-        seen = {p["id"] for p in store[key]}
-        for p in new:
-            if p["id"] in seen:
-                # refresh engagement numbers on posts we already have
-                for old in store[key]:
-                    if old["id"] == p["id"]:
-                        old.update({k: p[k] for k in ("likes", "score", "comments") if k in p})
-                continue
-            store[key].append(p)
-        store[key] = sorted([p for p in store[key] if p["time"] >= cutoff], key=lambda p: p["time"], reverse=True)
-
+    store = _load(social_file(out_dir, t))
     errors = {}
-    for key, fn, arg in (("stocktwits", fetch_stocktwits, t), ("reddit", fetch_reddit, company)):
+    for key, fn, arg in (("stocktwits", lambda x: fetch_stocktwits(x, max_pages=max_pages), t),
+                         ("reddit", fetch_reddit, company)):
         try:
-            merge(key, fn(arg))
+            merge_into(store, key, fn(arg))
         except Exception as e:  # noqa: BLE001
             errors[key] = f"{type(e).__name__}: {str(e)[:160]}"
             print(f"[warn] {key} for {t} failed: {errors[key]}", file=sys.stderr)
@@ -175,13 +179,40 @@ def update_social(company, out_dir):
         errors["trends"] = f"{type(e).__name__}: {str(e)[:160]}"
         print(f"[warn] trends for {t} failed: {errors['trends']}", file=sys.stderr)
     store["errors"] = errors
-
     store["updated"] = dt.datetime.now().astimezone().isoformat()
     store["reddit_configured"] = bool(os.environ.get("REDDIT_CLIENT_ID"))
-    os.makedirs(out_dir, exist_ok=True)
-    with open(path, "w") as f:
-        json.dump(store, f)
+    save_store(store, out_dir, t)
     return store
+
+
+def absorb_upload(payload, out_dir):
+    """Server side: merge posts collected elsewhere (the Mac) into the store. Returns the store."""
+    t = payload["ticker"].upper()
+    store = _load(social_file(out_dir, t))
+    for key in ("stocktwits", "reddit"):
+        if payload.get(key):
+            merge_into(store, key, payload[key])
+    if payload.get("trends"):
+        store["trends"] = payload["trends"]
+    errs = store.get("errors") or {}
+    for key in ("stocktwits", "reddit", "trends"):
+        if payload.get(key):
+            errs.pop(key, None)          # a source that just arrived by upload is not failing
+    store["errors"] = errs
+    store["updated"] = dt.datetime.now().astimezone().isoformat()
+    store["uploaded_from"] = payload.get("source", "remote")
+    save_store(store, out_dir, t)
+    return store
+
+
+def push_store(store, ticker, url, token, source="mac"):
+    """Client side: send this company's social store to the server."""
+    payload = {"ticker": ticker, "source": source, "stocktwits": store.get("stocktwits", []),
+               "reddit": store.get("reddit", []), "trends": store.get("trends", [])}
+    r = requests.post(url.rstrip("/") + "/api/social/upload", json=payload,
+                      headers={"X-Upload-Token": token, "User-Agent": UA}, timeout=60)
+    r.raise_for_status()
+    return r.json()
 
 
 def summarize(store):

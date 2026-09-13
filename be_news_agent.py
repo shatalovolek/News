@@ -660,7 +660,21 @@ def build_page(companies, results):
 
 
 # --------------------------------------------------------------------------- main
-def run_all(hours=24, backfill=False, only=None, verbose=True, pictures=True):
+def push_config():
+    """Where to upload social data: push.json next to the script, or PUSH_URL / PUSH_TOKEN."""
+    try:
+        with open(os.path.join(HERE, "push.json")) as f:
+            cfg = json.load(f)
+        if cfg.get("url") and cfg.get("token"):
+            return cfg
+    except Exception:  # noqa: BLE001
+        pass
+    if os.environ.get("PUSH_URL") and os.environ.get("PUSH_TOKEN"):
+        return {"url": os.environ["PUSH_URL"], "token": os.environ["PUSH_TOKEN"]}
+    return None
+
+
+def run_all(hours=24, backfill=False, only=None, verbose=True, pictures=True, push=None):
     """Collect news for every company, update histories, render pictures, rebuild the page.
     Returns (companies, summary list). Used by the CLI and by server.py."""
     os.makedirs(OUT_DIR, exist_ok=True)
@@ -680,7 +694,14 @@ def run_all(hours=24, backfill=False, only=None, verbose=True, pictures=True):
         price = fetch_price(c["ticker"])
         fund = fetch_fundamentals(c["ticker"])
         try:
-            social.update_social(c, OUT_DIR)
+            store = social.update_social(c, OUT_DIR, max_pages=12 if push else 8)
+            if push:
+                try:
+                    msg = social.push_store(store, c["ticker"], push["url"], push["token"])
+                    if verbose:
+                        print(f"    pushed social -> {msg.get('message')}")
+                except Exception as e:  # noqa: BLE001
+                    print(f"[warn] push social for {c['ticker']} failed: {e}", file=sys.stderr)
         except Exception as e:  # noqa: BLE001
             print(f"[warn] social for {c['ticker']} failed: {e}", file=sys.stderr)
         if backfill or not os.path.exists(history_file(c["ticker"])):
@@ -718,7 +739,22 @@ def main():
     ap.add_argument("--only", help="ticker(s) to run, comma-separated, e.g. BE,AMZN")
     ap.add_argument("--add", metavar="TICKER_OR_NAME", help="add a company to track (e.g. NVDA or Tesla), then run it")
     ap.add_argument("--remove", metavar="TICKER", help="stop tracking a company")
+    ap.add_argument("--push", action="store_true", help="upload collected social data to the website (needs push.json)")
+    ap.add_argument("--companies-from", metavar="URL", help="use the company list of a running site instead of the local one")
     args = ap.parse_args()
+
+    push = push_config() if args.push else None
+    if args.push and not push:
+        print("[warn] --push given but push.json / PUSH_URL+PUSH_TOKEN missing; not uploading", file=sys.stderr)
+    if args.companies_from or (push and not args.companies_from):
+        url = (args.companies_from or push["url"]).rstrip("/") + "/api/companies"
+        try:
+            remote = requests.get(url, headers=HEADERS, timeout=30).json()
+            if isinstance(remote, list) and remote:
+                save_companies(remote)   # keep the Mac's list identical to the site's
+                print(f"company list from site: {[c['ticker'] for c in remote]}")
+        except Exception as e:  # noqa: BLE001
+            print(f"[warn] could not read company list from {url}: {e}", file=sys.stderr)
 
     if args.remove:
         print("removed" if remove_company(args.remove) else "not in the list", args.remove.upper())
@@ -729,7 +765,7 @@ def main():
         print(("added" if created else "already tracked") + f": {c['name']} ({c['exchange']}: {c['ticker']})")
         args.only = c["ticker"] if created else args.only
 
-    companies, summary = run_all(args.hours, args.backfill, args.only)
+    companies, summary = run_all(args.hours, args.backfill, args.only, push=push)
     page = PAGE if os.path.exists(PAGE) else None
 
     if sys.platform == "darwin":

@@ -12,6 +12,8 @@ Environment:
     PORT           port to listen on (Render sets it)
     DATA_DIR       where histories, pictures and companies.json live (mount a Render disk here)
     REFRESH_HOURS  how often to re-collect news while running (default 2)
+    UPLOAD_TOKEN   shared secret; the Mac uses it to upload StockTwits data it collected
+                   (StockTwits blocks datacenter addresses, home connections work)
     GITHUB_TOKEN   fine-grained GitHub token (Contents: read/write on the repo). With it, companies
                    added or removed on the site are committed to companies.json in the repo, so they
                    survive Render's disk wipe on every deploy. GITHUB_REPO defaults to shatalovolek/News.
@@ -52,6 +54,15 @@ def refresh(only=None, backfill=False):
             traceback.print_exc()
         finally:
             STATE["running"] = False
+
+
+def rebuild_page():
+    """Rebuild news.html from what is on disk, without collecting anything."""
+    with LOCK:
+        try:
+            agent.build_page(agent.load_companies(), {})
+        except Exception as e:  # noqa: BLE001
+            STATE["last_error"] = f"rebuild: {type(e).__name__}: {e}"
 
 
 def scheduler(hours):
@@ -156,6 +167,18 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(201 if created else 200, {"company": c, "created": created,
                               "message": (f"Added {c['name']} ({c['ticker']}). Collecting its news now, reload in ~30 seconds."
                                           if created else f"{c['name']} ({c['ticker']}) is already tracked.")})
+        if path == "/api/social/upload":
+            token = os.environ.get("UPLOAD_TOKEN")
+            if not token or self.headers.get("X-Upload-Token") != token:
+                return self._send(401, {"error": "bad or missing X-Upload-Token"})
+            import social
+            body = self._json_body()
+            if not body.get("ticker"):
+                return self._send(400, {"error": "ticker missing"})
+            store = social.absorb_upload(body, agent.OUT_DIR)
+            threading.Thread(target=rebuild_page, daemon=True).start()
+            return self._send(200, {"message": f"{body['ticker']}: {len(store.get('stocktwits', []))} StockTwits, "
+                                                f"{len(store.get('reddit', []))} Reddit posts in store"})
         if path == "/api/refresh":
             if STATE["running"]:
                 return self._send(202, {"message": "Already collecting."})
