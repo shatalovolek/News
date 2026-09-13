@@ -61,6 +61,17 @@ def scheduler(hours):
         refresh()
 
 
+def _social_errors():
+    """Per-company social source errors from the last run (helps debug blocked sources)."""
+    import social
+    out = {}
+    for c in agent.load_companies():
+        errs = social._load(social.social_file(agent.OUT_DIR, c["ticker"])).get("errors") or {}
+        if errs:
+            out[c["ticker"]] = errs
+    return out
+
+
 def _mounted(path):
     """True when `path` is its own mount point (a Render disk), False for a plain folder."""
     try:
@@ -116,7 +127,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, {"ok": True, "last_run": STATE["last_run"], "running": STATE["running"],
                                     "last_error": STATE["last_error"], "companies": len(agent.load_companies()),
                                     "persistent": bool(os.environ.get("GITHUB_TOKEN") or os.environ.get("DATA_DIR")),
-                                    "data_dir": agent.OUT_DIR, "disk_mounted": _mounted(agent.OUT_DIR)})
+                                    "data_dir": agent.OUT_DIR, "disk_mounted": _mounted(agent.OUT_DIR),
+                                    "social_errors": _social_errors()})
         if path == "/api/companies":
             return self._send(200, agent.load_companies())
         if path.startswith("/pictures/"):

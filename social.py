@@ -25,6 +25,9 @@ warnings.filterwarnings("ignore", category=FutureWarning)  # pytrends/pandas noi
 
 UA = "stock-newsroom/1.0 (research; contact shatalov@beat-trade.com)"
 H = {"User-Agent": UA, "Accept": "application/json"}
+ST_H = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36",
+        "Accept": "application/json, text/plain, */*", "Accept-Language": "en-US,en;q=0.9",
+        "Origin": "https://stocktwits.com", "Referer": "https://stocktwits.com/"}
 KEEP_DAYS = 30
 SUBREDDITS = "stocks+wallstreetbets+investing+options+StockMarket+ValueInvesting+Daytrading+securityanalysis"
 
@@ -49,10 +52,11 @@ def fetch_stocktwits(ticker, max_pages=8, since_days=7):
     for _ in range(max_pages):
         url = f"https://api.stocktwits.com/api/2/streams/symbol/{ticker}.json"
         params = {"max": cursor_max} if cursor_max else {}
-        r = requests.get(url, params=params, headers=H, timeout=25)
+        r = requests.get(url, params=params, headers=ST_H, timeout=25)
         if r.status_code == 404:
             return out  # symbol unknown to StockTwits
-        r.raise_for_status()
+        if r.status_code != 200:
+            raise RuntimeError(f"HTTP {r.status_code}: {r.text[:120]!r}")
         j = r.json()
         for m in j.get("messages", []):
             when = dt.datetime.fromisoformat(m["created_at"].replace("Z", "+00:00"))
@@ -156,17 +160,21 @@ def update_social(company, out_dir):
             store[key].append(p)
         store[key] = sorted([p for p in store[key] if p["time"] >= cutoff], key=lambda p: p["time"], reverse=True)
 
+    errors = {}
     for key, fn, arg in (("stocktwits", fetch_stocktwits, t), ("reddit", fetch_reddit, company)):
         try:
             merge(key, fn(arg))
         except Exception as e:  # noqa: BLE001
-            print(f"[warn] {key} for {t} failed: {e}", file=sys.stderr)
+            errors[key] = f"{type(e).__name__}: {str(e)[:160]}"
+            print(f"[warn] {key} for {t} failed: {errors[key]}", file=sys.stderr)
     try:
         tr = fetch_trends(company["name"])
         if tr:
             store["trends"] = tr
     except Exception as e:  # noqa: BLE001
-        print(f"[warn] trends for {t} failed: {str(e)[:120]}", file=sys.stderr)
+        errors["trends"] = f"{type(e).__name__}: {str(e)[:160]}"
+        print(f"[warn] trends for {t} failed: {errors['trends']}", file=sys.stderr)
+    store["errors"] = errors
 
     store["updated"] = dt.datetime.now().astimezone().isoformat()
     store["reddit_configured"] = bool(os.environ.get("REDDIT_CLIENT_ID"))
@@ -227,6 +235,7 @@ def summarize(store):
                     key=lambda p: (p.get("likes", 0), p.get("followers", 0)), reverse=True)[:6]
     return {
         "updated": store.get("updated"), "reddit_configured": store.get("reddit_configured", False),
+        "errors": store.get("errors", {}),
         "daily": rows, "last24": last24, "last7": last7, "buzz": buzz,
         "trends": trends[-90:], "trend_now": trends[-1]["v"] if trends else None,
         "trend_peak": max((x["v"] for x in trends), default=None),
