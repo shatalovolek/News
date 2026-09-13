@@ -32,6 +32,7 @@ import requests
 from PIL import Image, ImageDraw, ImageFont
 
 import social
+import brief
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT_DIR = os.environ.get("DATA_DIR") or os.path.join(HERE, "output")   # Render: mount a disk at /data
@@ -647,6 +648,7 @@ def build_page(companies, results):
             "ticker": c["ticker"], "name": c["name"], "exchange": c["exchange"],
             "fundamentals": fund,
             "social": social.summarize(social._load(social.social_file(OUT_DIR, c["ticker"]))),
+            "brief": brief.load_brief(OUT_DIR, c["ticker"]),
             "ytd_change_pct": (price or {}).get("ytd_change_pct"),
             "closes": (price or {}).get("series", []),
             "items": [{"title": h["title"], "link": h["link"], "source": h["source"],
@@ -674,7 +676,7 @@ def push_config():
     return None
 
 
-def run_all(hours=24, backfill=False, only=None, verbose=True, pictures=True, push=None):
+def run_all(hours=24, backfill=False, only=None, verbose=True, pictures=True, push=None, force_brief=False):
     """Collect news for every company, update histories, render pictures, rebuild the page.
     Returns (companies, summary list). Used by the CLI and by server.py."""
     os.makedirs(OUT_DIR, exist_ok=True)
@@ -709,6 +711,14 @@ def run_all(hours=24, backfill=False, only=None, verbose=True, pictures=True, pu
         else:
             hist = update_history(c, items)
         results[c["ticker"]] = (hist, price, fund)
+        if os.environ.get("ANTHROPIC_API_KEY"):
+            try:
+                soc = social.summarize(social._load(social.social_file(OUT_DIR, c["ticker"])))
+                b = brief.generate(c, hist, soc, price, fund, OUT_DIR, force=force_brief)
+                if verbose and b and b.get("data"):
+                    print(f"    brief: {b['data']['tone']} · {b['data']['summary'][:90]}…")
+            except Exception as e:  # noqa: BLE001
+                print(f"[warn] brief for {c['ticker']} failed: {type(e).__name__}: {e}", file=sys.stderr)
 
         if pictures:
             png = os.path.join(OUT_DIR, f"{c['ticker']}_news_{day}.png")
@@ -740,6 +750,7 @@ def main():
     ap.add_argument("--add", metavar="TICKER_OR_NAME", help="add a company to track (e.g. NVDA or Tesla), then run it")
     ap.add_argument("--remove", metavar="TICKER", help="stop tracking a company")
     ap.add_argument("--push", action="store_true", help="upload collected social data to the website (needs push.json)")
+    ap.add_argument("--brief", action="store_true", help="regenerate the AI briefs now (needs ANTHROPIC_API_KEY)")
     ap.add_argument("--companies-from", metavar="URL", help="use the company list of a running site instead of the local one")
     args = ap.parse_args()
 
@@ -765,7 +776,7 @@ def main():
         print(("added" if created else "already tracked") + f": {c['name']} ({c['exchange']}: {c['ticker']})")
         args.only = c["ticker"] if created else args.only
 
-    companies, summary = run_all(args.hours, args.backfill, args.only, push=push)
+    companies, summary = run_all(args.hours, args.backfill, args.only, push=push, force_brief=args.brief)
     page = PAGE if os.path.exists(PAGE) else None
 
     if sys.platform == "darwin":

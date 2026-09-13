@@ -84,6 +84,34 @@ svg text{font-family:var(--font-mono);font-size:11px;fill:var(--muted)}
 .tag.pos{background:var(--pos-soft);color:var(--pos)}.tag.neg{background:var(--neg-soft);color:var(--neg)}
 .empty{padding:40px 0;color:var(--muted);text-align:center}
 footer{margin-top:28px;font-size:12px;color:var(--muted);line-height:1.6;max-width:70ch}
+/* AI brief */
+.brief{background:var(--surface);border:1px solid var(--line);border-top:0;padding:16px 18px 14px}
+.brief-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px 14px}
+.brief-head h2{font-family:var(--font-display);font-size:18px;font-weight:600;margin:0;display:flex;align-items:center;gap:10px}
+.brief-head small{font-family:var(--font-mono);font-size:11.5px;color:var(--muted)}
+.tone{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:var(--neu-soft);color:var(--muted)}
+.tone.positive{background:var(--pos-soft);color:var(--pos)}.tone.negative{background:var(--neg-soft);color:var(--neg)}.tone.mixed{background:var(--accent-soft);color:var(--accent)}
+.brief p.sum{font-size:16px;line-height:1.55;margin:10px 0 8px;max-width:72ch;text-wrap:pretty}
+.themes{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 12px}
+.themes span{font-size:12.5px;padding:3px 9px;border:1px solid var(--line);border-radius:999px;color:var(--muted)}
+.bgrid{display:grid;grid-template-columns:3fr 2fr;gap:12px 28px}
+.brief h3{font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:8px 0 4px;font-weight:500}
+.events{list-style:none;margin:0;padding:0}
+.events li{padding:8px 0;border-top:1px solid var(--line-soft);font-size:14.5px;line-height:1.4}
+.events li b{font-weight:600}.events li .why{color:var(--muted);display:block;margin-top:2px}
+.events li .src{display:block;margin-top:3px;font-size:12px}.events li .src a{color:var(--accent);text-decoration:none;margin-right:10px}.events li .src a:hover{text-decoration:underline}
+.brief ul.plain{margin:0;padding-left:18px;font-size:14px;line-height:1.45;color:var(--ink)}
+.brief .watch{font-size:14.5px;line-height:1.45;padding:10px 12px;background:var(--accent-soft);border-radius:3px;margin-top:6px}
+.brief .mood{font-size:13.5px;color:var(--muted);margin-top:8px;line-height:1.45}
+.brief .off{font-size:13.5px;color:var(--muted)}
+.briefs{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;margin-top:8px}
+.bcard{background:var(--surface);border:1px solid var(--line);padding:12px 14px;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.bcard:hover{border-color:var(--accent)}.bcard:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.bcard .h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.bcard .h b{font-family:var(--font-display);font-size:17px;font-weight:600}
+.bcard p{margin:0;font-size:13.5px;line-height:1.45;color:var(--ink)}
+.bcard .w{margin-top:6px;font-size:12.5px;color:var(--muted)}
+@media (max-width:760px){.bgrid{grid-template-columns:1fr}}
 /* fundamentals */
 .funds{background:var(--surface);border:1px solid var(--line);border-top:0;padding:14px 16px 12px}
 .funds-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px}
@@ -209,6 +237,8 @@ h2.sec small{font-family:var(--font-mono);font-size:12px;color:var(--muted);font
 
 <div id="summary-view" hidden>
   <div class="overview" id="overview"></div>
+  <h2 class="sec" id="briefs-h" hidden>Daily briefs <small id="briefs-note"></small></h2>
+  <div class="briefs" id="briefs" hidden></div>
   <h2 class="sec">Most important news <small id="topnote"></small></h2>
   <div class="top" id="topnews"></div>
   <h2 class="sec">Company by company <small>top stories, last 3 days</small></h2>
@@ -217,6 +247,15 @@ h2.sec small{font-family:var(--font-mono);font-size:12px;color:var(--muted);font
 
 <div id="company-view">
 <div class="tiles" id="tiles"></div>
+<section class="brief" id="brief" hidden>
+  <div class="brief-head"><h2>AI brief <span class="tone" id="btone"></span></h2><small id="bnote"></small></div>
+  <p class="sum" id="bsum"></p>
+  <div class="themes" id="bthemes"></div>
+  <div class="bgrid">
+    <div><h3>Key events</h3><ul class="events" id="bevents"></ul><div class="mood" id="bmood"></div></div>
+    <div><h3>Risks and open questions</h3><ul class="plain" id="brisks"></ul><h3>What to watch</h3><div class="watch" id="bwatch"></div></div>
+  </div>
+</section>
 <section class="funds" id="funds" hidden>
   <div class="funds-head"><h2>Fundamentals</h2><small id="funds-note"></small></div>
   <div class="fgrid" id="fgrid"></div>
@@ -247,7 +286,7 @@ h2.sec small{font-family:var(--font-mono);font-size:12px;color:var(--muted);font
 <div id="timeline"></div>
 </div>
 
-<footer>Social: StockTwits public stream (bullish/bearish tags are set by the posters), Google Trends (relative search interest, 100 = peak of the period). Fundamentals: Finviz or StockAnalysis, refreshed with the news; trailing-twelve-month figures where applicable. Sources: Google News and Yahoo Finance RSS, de-duplicated, collected several times a day for every tracked company. "Most important" ranks headlines by a heuristic: real events (earnings, deals, lawsuits, launches) from major outlets score high; holdings filings, listicles and stock-tip pieces score low. Tone tags come from a keyword heuristic on the headline and are a reading aid, not investment advice. Times are shown in your local time zone.</footer>
+<footer>AI brief: generated by Claude from the headlines, StockTwits and price data shown on this page; it reports, it does not advise. Social: StockTwits public stream (bullish/bearish tags are set by the posters), Google Trends (relative search interest, 100 = peak of the period). Fundamentals: Finviz or StockAnalysis, refreshed with the news; trailing-twelve-month figures where applicable. Sources: Google News and Yahoo Finance RSS, de-duplicated, collected several times a day for every tracked company. "Most important" ranks headlines by a heuristic: real events (earnings, deals, lawsuits, launches) from major outlets score high; holdings filings, listicles and stock-tip pieces score low. Tone tags come from a keyword heuristic on the headline and are a reading aid, not investment advice. Times are shown in your local time zone.</footer>
 </div>
 
 <script id="data" type="application/json">__DATA__</script>
@@ -315,12 +354,20 @@ function showSummary(){
   const today=dayKey(new Date()), now=Date.now();
   document.getElementById('overview').innerHTML=companies.map(c=>{
     const week=c.items.filter(i=>now-i.d<7*864e5), t=c.items.filter(i=>dayKey(i.d)===today).length;
-    return `<button class="co" data-t="${esc(c.ticker)}"><span class="nm">${esc(c.name)}</span><span class="tk">${esc(c.exchange)}: ${esc(c.ticker)}</span>
+    return `<button class="co" data-t="${esc(c.ticker)}"><span class="nm">${esc(c.name)}${c.brief&&c.brief.data?` <span class="tone ${c.brief.data.tone}" style="vertical-align:middle">${c.brief.data.tone}</span>`:''}</span><span class="tk">${esc(c.exchange)}: ${esc(c.ticker)}</span>
       <span class="px">${c.last?'$'+c.last.c.toFixed(2):'—'}</span>${spark(c.closes)}<span class="dc"><span class="${cls(c.dayPct)}">${pct(c.dayPct)} today</span> · <span class="${cls(c.ytd_change_pct)}">${pct(c.ytd_change_pct)} YTD</span></span>
       ${c.social&&c.social.last24?`<span class="so"><span>StockTwits 24h <b>${c.social.last24.st}</b></span>${c.social.last24.bull_share!=null?`<span>bullish <b class="${c.social.last24.bull_share>=60?'up':c.social.last24.bull_share<=40?'down':''}">${c.social.last24.bull_share}%</b></span>`:''}${c.social.buzz!=null?`<span>buzz <b>×${c.social.buzz.toFixed(1)}</b></span>`:''}${c.social.reddit_configured?`<span>Reddit 7d <b>${c.social.last7.rd}</b></span>`:''}</span>`:''}
       ${c.fundamentals&&c.fundamentals.values?`<span class="fr">${[['market_cap','Cap'],['pe','P/E'],['fwd_pe','Fwd P/E'],['ps','P/S'],['ev_ebitda','EV/EBITDA']].filter(([k])=>c.fundamentals.values[k]).map(([k,l])=>`<span>${l} <b>${esc(c.fundamentals.values[k])}</b></span>`).join('')}</span>`:''}
       <span class="cnt">${t} headline${t===1?'':'s'} today · ${week.length} this week · <span class="up">${week.filter(i=>i.score>0).length}</span>/<span class="down">${week.filter(i=>i.score<0).length}</span></span></button>`;}).join('');
   document.querySelectorAll('.co').forEach(b=>b.onclick=()=>selectTab(b.dataset.t));
+  const withBrief=companies.filter(c=>c.brief&&c.brief.data);
+  document.getElementById('briefs-h').hidden=!withBrief.length; document.getElementById('briefs').hidden=!withBrief.length;
+  if(withBrief.length){
+    const newest=withBrief.map(c=>new Date(c.brief.generated)).sort((a,b)=>b-a)[0];
+    document.getElementById('briefs-note').textContent=`by Claude · latest ${fmtD.format(newest)} ${fmtT.format(newest)}`;
+    document.getElementById('briefs').innerHTML=withBrief.map(c=>`<button class="bcard" data-t="${esc(c.ticker)}"><div class="h"><b>${esc(c.name)}</b><span class="tone ${c.brief.data.tone}">${c.brief.data.tone}</span></div><p>${esc(c.brief.data.summary)}</p>${c.brief.data.watch?`<div class="w">Watch: ${esc(c.brief.data.watch)}</div>`:''}</button>`).join('');
+    document.querySelectorAll('.bcard').forEach(b=>b.onclick=()=>selectTab(b.dataset.t));
+  }
   // cross-company top list: last 3 days, ranked by importance then recency
   let win=3*864e5, all=[]; companies.forEach(c=>c.items.forEach(i=>all.push({...i,co:c})));
   let pool=all.filter(i=>now-i.d<win); if(pool.length<8){win=7*864e5;pool=all.filter(i=>now-i.d<win);}
@@ -381,11 +428,24 @@ function show(c){
   document.getElementById('eyebrow').textContent = `${c.exchange}: ${c.ticker} · daily news log`;
   document.getElementById('h1').innerHTML = `${esc(c.name)} <span>Newsroom</span>`;
   document.getElementById('chart-title').textContent = `${c.ticker} share price and news volume, last 90 days`;
-  renderTiles(c); renderFunds(c); renderSocial(c); renderChart(c); buildFilters(c); render();
+  renderTiles(c); renderBrief(c); renderFunds(c); renderSocial(c); renderChart(c); buildFilters(c); render();
 }
 
 const FUND_LABELS=[['market_cap','Market cap','Total value of all shares'],['pe','P/E','Price / earnings per share, trailing 12 months'],['fwd_pe','Forward P/E','Price / expected earnings next fiscal year'],['peg','PEG','P/E divided by expected earnings growth'],['ps','P/S','Price / sales per share'],['pb','P/B','Price / book value per share'],['ev_ebitda','EV/EBITDA','Enterprise value / EBITDA'],['eps','EPS (ttm)','Earnings per share, trailing 12 months'],['revenue','Revenue (ttm)',''],['net_income','Net income (ttm)',''],['rev_growth','Revenue growth','Year over year, trailing 12 months'],['gross_margin','Gross margin',''],['oper_margin','Operating margin',''],['net_margin','Net margin',''],['roe','ROE','Return on equity'],['debt_equity','Debt / equity',''],['div_yield','Dividend yield',''],['beta','Beta','Volatility vs the market (1 = market)'],['range_52w','52-week range',''],['short_float','Short float','Share of float sold short'],['target','Analyst target',''],['earnings','Next earnings',''],['perf_year','1-year change','']];
 function fundClass(k,v){ if(!/^-?\d/.test(v)) return ''; if(['rev_growth','net_margin','oper_margin','gross_margin','roe','perf_year','eps','net_income'].includes(k)) return v.trim().startsWith('-')?'down':'up'; return ''; }
+function renderBrief(c){
+  const sec=document.getElementById('brief'), B=c.brief;
+  if(!B||!B.data){ sec.hidden=!B||!B.error; if(B&&B.error){ sec.hidden=false; document.getElementById('bsum').innerHTML=`<span class="off">Brief not available: ${esc(B.error)}</span>`; ['bthemes','bevents','brisks','bmood'].forEach(id=>document.getElementById(id).innerHTML=''); document.getElementById('bwatch').textContent=''; document.getElementById('btone').textContent=''; document.getElementById('bnote').textContent=''; } return; }
+  sec.hidden=false; const d=B.data;
+  const t=document.getElementById('btone'); t.textContent=d.tone; t.className='tone '+d.tone;
+  document.getElementById('bnote').textContent=`${fmtD.format(new Date(B.generated))} ${fmtT.format(new Date(B.generated))} · ${B.headlines_used} headlines read${B.error?' · last refresh failed, showing previous':''}`;
+  document.getElementById('bsum').textContent=d.summary;
+  document.getElementById('bthemes').innerHTML=(d.themes||[]).map(x=>`<span>${esc(x)}</span>`).join('');
+  document.getElementById('bevents').innerHTML=(d.key_events||[]).length?d.key_events.map(e=>`<li><b>${esc(e.what)}</b><span class="why">${esc(e.why_it_matters)}</span>${(e.headlines||[]).length?`<span class="src">${e.headlines.map(h=>`<a href="${esc(h.link)}" target="_blank" rel="noopener" title="${esc(h.title)}">${esc(h.source)}</a>`).join('')}</span>`:''}</li>`).join(''):'<li style="color:var(--muted)">No material events in the period.</li>';
+  document.getElementById('bmood').textContent=d.retail_mood&&d.retail_mood.toLowerCase()!=='no data'?'Retail mood: '+d.retail_mood:'';
+  document.getElementById('brisks').innerHTML=(d.risks||[]).length?d.risks.map(x=>`<li>${esc(x)}</li>`).join(''):'<li style="color:var(--muted);list-style:none;margin-left:-18px">None flagged.</li>';
+  document.getElementById('bwatch').textContent=d.watch||'';
+}
 function renderFunds(c){
   const sec=document.getElementById('funds'), f=c.fundamentals;
   if(!f||!f.values||!Object.keys(f.values).length){ sec.hidden=true; return; }
