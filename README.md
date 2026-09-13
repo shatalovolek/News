@@ -108,6 +108,14 @@ Settings (Render → Environment): `ANTHROPIC_API_KEY` (required), `BRIEF_LANG` 
 day that is around $0.45/day. `/api/health` → `briefs` shows generation times, token usage and
 errors per company.
 
+## Short interest
+`shorts.py` stores a dated Finviz snapshot on every run (short % of float, days to cover, shares
+short, float) and, for Nasdaq-listed names, the official FINRA bi-monthly series from Nasdaq's API
+(settlement date, shares short, average volume, days to cover). The page shows four tiles, a
+change-versus-previous-report verdict and a history chart (FINRA series where available, otherwise
+the accumulated snapshots); the Summary card carries the short % and the brief gets one line.
+The Mac uploads its copy with the StockTwits data in case Nasdaq blocks the server.
+
 ## Reading articles in full
 `articles.py` downloads the most important stories of the last 3 days (heuristic importance ≥ 2.5,
 up to 6 new per company per run) and extracts their text with trafilatura; the brief receives up to
