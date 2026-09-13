@@ -62,6 +62,7 @@ Rules:
 - Attribute claims to their source when they are opinions ("Seeking Alpha argues...").
 - Tone is about the news flow of the period, not the long-term story.
 - Be concrete: numbers, names, dates from the input. Never invent facts not present in the input.
+- When ARTICLE TEXT is given for a headline id, prefer the article's facts over the headline's wording; quote numbers from it.
 - SEC filings and insider transactions in the input are official; an open-market insider buy or sale is always worth a mention.
 - Relative performance tells you whether a move was company-specific or sector-wide; say which.
 - Write in {language}. Keep the summary under 120 words."""
@@ -150,11 +151,17 @@ def needs_refresh(existing, input_hash, force=False):
     return existing.get("input_hash") != input_hash and age >= 2   # new news, but not more often than every 2h
 
 
-def generate(company, hist, social, price, fund, out_dir, force=False, extra=None):
+def generate(company, hist, social, price, fund, out_dir, force=False, extra=None, art_store=None):
     """Return the brief dict (cached or fresh). Returns None when no API key is set."""
     if not os.environ.get("ANTHROPIC_API_KEY"):
         return None
     existing = load_brief(out_dir, company["ticker"])
+    if art_store:
+        import articles
+        _, heads0 = build_input(company, hist, social, price, fund)
+        art_block = articles.block_for_brief(art_store, heads0)
+        if art_block:
+            extra = list(extra or []) + [art_block]
     text, heads = build_input(company, hist, social, price, fund, extra=extra, previous=existing)
     # the hash must not include the previous brief itself, otherwise every brief triggers the next
     base_text, _ = build_input(company, hist, social, price, fund, extra=extra, previous=None)
@@ -192,6 +199,7 @@ def generate(company, hist, social, price, fund, out_dir, force=False, extra=Non
     result = {
         "generated": dt.datetime.now().astimezone().isoformat(), "model": response.model, "lang": LANG,
         "input_hash": input_hash, "headlines_used": len(heads), "error": None,
+        "articles_used": text.count("\n\n[") if "ARTICLE TEXT" in text else 0,
         "usage": {"input": response.usage.input_tokens, "output": response.usage.output_tokens},
         "data": data,
     }

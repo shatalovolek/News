@@ -35,6 +35,7 @@ import social
 import brief
 import edgar
 import relative
+import articles
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT_DIR = os.environ.get("DATA_DIR") or os.path.join(HERE, "output")   # Render: mount a disk at /data
@@ -696,8 +697,10 @@ def build_page(companies, results):
                     fund = json.load(f)
             except Exception:  # noqa: BLE001
                 fund = None
+        read = articles.read_set(articles.load(OUT_DIR, c["ticker"]))
         data["companies"].append({
             "ticker": c["ticker"], "name": c["name"], "exchange": c["exchange"],
+            "articles_read": len(read),
             "fundamentals": fund,
             "social": social.summarize(social._load(social.social_file(OUT_DIR, c["ticker"]))),
             "brief": brief.load_brief(OUT_DIR, c["ticker"]),
@@ -709,7 +712,8 @@ def build_page(companies, results):
             "closes": (price or {}).get("series", []),
             "items": [{"title": h["title"], "link": h["link"], "source": h["source"],
                        "time": h["time"], "score": h["score"],
-                       "importance": h.get("importance", importance(h))} for h in hist],
+                       "importance": h.get("importance", importance(h)),
+                       **({"read": True} if h["link"] in read else {})} for h in hist],
         })
     blob = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
     with open(PAGE, "w") as f:
@@ -783,6 +787,7 @@ def run_all(hours=24, backfill=False, only=None, verbose=True, pictures=True, pu
             store = social.update_social(c, OUT_DIR, max_pages=12 if push else 8)
             if push:
                 try:
+                    store["articles"] = articles.load(OUT_DIR, c["ticker"])   # publishers rarely block a home connection
                     msg = social.push_store(store, c["ticker"], push["url"], push["token"])
                     if verbose:
                         print(f"    pushed social -> {msg.get('message')}")
@@ -795,12 +800,18 @@ def run_all(hours=24, backfill=False, only=None, verbose=True, pictures=True, pu
         else:
             hist = update_history(c, items)
         results[c["ticker"]] = (hist, price, fund)
+        # full text of the most important articles (cached per link)
+        try:
+            art_store = articles.update_articles(c, hist, OUT_DIR)
+        except Exception as e:  # noqa: BLE001
+            print(f"[warn] articles for {c['ticker']} failed: {e}", file=sys.stderr)
+            art_store = articles.load(OUT_DIR, c["ticker"])
         if os.environ.get("ANTHROPIC_API_KEY"):
             try:
                 soc = social.summarize(social._load(social.social_file(OUT_DIR, c["ticker"])))
                 extra = [brief.edgar_block(edgar.summarize(edgar._load(OUT_DIR, c["ticker"]))),
                          relative.describe(load_relative(c["ticker"]))]
-                b = brief.generate(c, hist, soc, price, fund, OUT_DIR, force=force_brief, extra=extra)
+                b = brief.generate(c, hist, soc, price, fund, OUT_DIR, force=force_brief, extra=extra, art_store=art_store)
                 if verbose and b and b.get("data"):
                     print(f"    brief: {b['data']['tone']} · {b['data']['summary'][:90]}…")
             except Exception as e:  # noqa: BLE001
