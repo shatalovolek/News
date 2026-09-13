@@ -176,6 +176,14 @@ previous series is kept.
 ## Sources
 Google News RSS (query "Bloom Energy" OR "NYSE:BE") and Yahoo Finance headline RSS,
 de‑duplicated; price from Yahoo Finance chart API. No API keys needed.
+
+Optionally, set `TAVILY_API_KEY` (Render → Environment) to add Tavily news search as a third
+feed — broader and often fresher than the RSS feeds, and its links are already direct
+(no Google redirect to decode). The same key also makes `articles.py` fall back to Tavily's
+`/extract` when our own scrape of an article page comes back empty (paywall, cookie wall,
+robots block). Tavily has a free tier (~1000 credits/month); each search is 1 credit,
+extraction is 1 credit per 5 successful URLs.
+
 Sentiment dots are a simple keyword heuristic, not investment advice.
 
 Requires Python 3 with `requests` and `Pillow` (already installed on this Mac).

@@ -7,6 +7,13 @@ LABEL=com.alexdrone.be-news-agent
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 PY="$(which python3)"
 mkdir -p "$HOME/Library/LaunchAgents" "$DIR/output"
+# launchd doesn't read .zshrc, so any TAVILY_API_KEY export in the shell is invisible to it;
+# pull it from tavily.key (gitignored, one line) next to the script instead.
+ENV_BLOCK=""
+if [ -f "$DIR/tavily.key" ]; then
+  TAVILY_KEY="$(tr -d '[:space:]' < "$DIR/tavily.key")"
+  ENV_BLOCK="  <key>EnvironmentVariables</key><dict><key>TAVILY_API_KEY</key><string>$TAVILY_KEY</string></dict>"
+fi
 cat > "$PLIST" <<PL
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -17,6 +24,7 @@ cat > "$PLIST" <<PL
     <string>--no-open</string><string>--no-notify</string><string>--push</string>
   </array>
   <key>WorkingDirectory</key><string>$DIR</string>
+$ENV_BLOCK
   <key>StartCalendarInterval</key><array>
 $(for h in 8 10 12 14 16 18 20 22; do echo "    <dict><key>Hour</key><integer>$h</integer><key>Minute</key><integer>5</integer></dict>"; done)
   </array>

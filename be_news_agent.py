@@ -3,8 +3,9 @@
 Daily stock-news agent (Bloom Energy, Amazon, Google, SanDisk, ... see companies.json).
 
 For every company in companies.json it collects the day's news from Google News and
-Yahoo Finance, pulls the share price, renders a PNG "news photo" per company, keeps a
-growing history, and rebuilds output/news.html (one tab per company).
+Yahoo Finance (plus Tavily search when TAVILY_API_KEY is set), pulls the share price,
+renders a PNG "news photo" per company, keeps a growing history, and rebuilds
+output/news.html (one tab per company).
 
 Usage:
     python3 be_news_agent.py               # last 24h, save, open the page, notify
@@ -27,6 +28,7 @@ import textwrap
 import time
 import xml.etree.ElementTree as ET
 from email.utils import parsedate_to_datetime
+from urllib.parse import quote_plus, urlparse
 
 import requests
 from PIL import Image, ImageDraw, ImageFont
@@ -175,7 +177,6 @@ def remove_company(ticker):
 
 
 def feeds_for(c):
-    from urllib.parse import quote_plus
     return {
         "Google News": ("https://news.google.com/rss/search?q=" + quote_plus(c["query"])
                         + "&hl=en-US&gl=US&ceid=US:en"),
@@ -252,6 +253,41 @@ def fetch_feed(name, url):
     return items
 
 
+def fetch_tavily(company, hours):
+    """Tavily news search: broader/fresher coverage than the RSS feeds. Opt-in via TAVILY_API_KEY."""
+    key = os.environ.get("TAVILY_API_KEY")
+    if not key:
+        return []
+    time_range = "month" if hours > 24 * 7 else "week"
+    try:
+        r = requests.post(
+            "https://api.tavily.com/search",
+            headers={"Authorization": f"Bearer {key}"},
+            json={"query": company["query"], "topic": "news", "time_range": time_range,
+                  "max_results": 20, "include_published_date": True},
+            timeout=25,
+        )
+        r.raise_for_status()
+        data = r.json()
+    except Exception as e:  # noqa: BLE001
+        print(f"[warn] Tavily search failed: {e}", file=sys.stderr)
+        return []
+    items = []
+    for res in data.get("results", []):
+        pub = res.get("published_date")
+        try:
+            when = parsedate_to_datetime(pub).astimezone(dt.timezone.utc) if pub else None
+        except Exception:  # noqa: BLE001
+            when = None
+        if not when:
+            continue
+        url = res.get("url", "")
+        src = urlparse(url).netloc.removeprefix("www.") or "Tavily"
+        items.append({"title": (res.get("title") or "").strip(), "link": url,
+                      "source": src, "time": when, "feed": "Tavily"})
+    return items
+
+
 def norm(title):
     return re.sub(r"[^a-z0-9]+", " ", title.lower()).strip()[:80]
 
@@ -260,6 +296,7 @@ def collect_news(company, hours):
     all_items = []
     for name, url in feeds_for(company).items():
         all_items.extend(fetch_feed(name, url))
+    all_items.extend(fetch_tavily(company, hours))
     now = dt.datetime.now(dt.timezone.utc)
     cutoff = now - dt.timedelta(hours=hours)
     seen, fresh = {}, []

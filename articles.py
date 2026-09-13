@@ -3,9 +3,10 @@ Full-text reading of the most important articles, so the brief sees more than he
 
 For each company: take the last 3 days of headlines, rank by importance, resolve the link
 (Google News links are decoded through Google's own endpoint), download the page and extract
-the article text with trafilatura. Results are cached per link in output/articles_<TICKER>.json;
-a link is fetched once (failures are retried after a day). Sites that block robots simply
-yield nothing and are skipped.
+the article text with trafilatura. If that yields nothing (paywall, cookie wall, robots
+block) and TAVILY_API_KEY is set, Tavily's /extract is tried as a fallback. Results are
+cached per link in output/articles_<TICKER>.json; a link is fetched once (failures are
+retried after a day). Sites that still block us simply yield nothing and are skipped.
 """
 import datetime as dt
 import json
@@ -99,6 +100,26 @@ def extract(html):
     return trafilatura.extract(html, include_comments=False, include_tables=False, favor_precision=True)
 
 
+def tavily_extract(url):
+    """Fallback for pages our own scrape can't read (paywall, cookie wall, robots block).
+    Opt-in via TAVILY_API_KEY; returns None (no-op) when unset or on any failure."""
+    key = os.environ.get("TAVILY_API_KEY")
+    if not key:
+        return None
+    try:
+        r = requests.post(
+            "https://api.tavily.com/extract",
+            headers={"Authorization": f"Bearer {key}"},
+            json={"urls": [url], "format": "text"},
+            timeout=30,
+        )
+        r.raise_for_status()
+        results = r.json().get("results") or []
+        return results[0].get("raw_content") if results else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def read_one(link, known_url=None):
     """Returns a cache record for one headline link. known_url skips the Google decode on retries."""
     rec = {"fetched": dt.datetime.now().astimezone().isoformat(), "ok": False, "url": known_url, "chars": 0, "text": "", "error": None}
@@ -108,12 +129,17 @@ def read_one(link, known_url=None):
             rec["error"] = "could not resolve link"
             return rec
         rec["url"] = real
-        r = requests.get(real, headers=H, timeout=25)
-        if r.status_code != 200:
-            rec["error"] = f"HTTP {r.status_code}"
-            return rec
-        text = extract(r.text) or ""
-        text = re.sub(r"\n{3,}", "\n\n", text).strip()
+        text = ""
+        try:
+            r = requests.get(real, headers=H, timeout=25)
+            if r.status_code == 200:
+                text = re.sub(r"\n{3,}", "\n\n", extract(r.text) or "").strip()
+        except Exception:  # noqa: BLE001
+            pass
+        if len(text) < MIN_CHARS:
+            fallback = tavily_extract(real)
+            if fallback:
+                text = re.sub(r"\n{3,}", "\n\n", fallback).strip()
         if len(text) < MIN_CHARS:
             rec["error"] = "no readable text (paywall, cookie wall or script-only page)"
             return rec
