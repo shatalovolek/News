@@ -266,7 +266,7 @@ def weekly_digest(companies, per_company_text, out_dir, force=False):
         try:
             age = (dt.datetime.now().astimezone() - dt.datetime.fromisoformat(existing["generated"])).total_seconds() / 86400
             # regenerate early once when the previous digest was written before any briefs existed
-            if age < 6 and not (existing.get("briefs_seen", 1) == 0 and briefs_now > 0 and age > 0.1):
+            if age < 6 and not (existing.get("briefs_seen", 0) == 0 and briefs_now > 0 and age > 0.1):
                 return existing
         except Exception:  # noqa: BLE001
             pass
