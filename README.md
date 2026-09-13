@@ -93,7 +93,22 @@ From then on every add/remove on the site is committed to `companies.json` with
 starts from the updated list. The add panel warns when persistence is off.
 With the disk in place the token is optional; it only adds a copy of the list in the repo.
 
-## Social section (StockTwits, Reddit, Google Trends)
+## AI brief (Claude)
+With `ANTHROPIC_API_KEY` set on the server, `brief.py` writes a brief per company: a summary of
+what happened in the last 3 days, tone, themes, key events linked to their sources, retail mood
+from StockTwits, risks and what to watch. It reads the headlines, StockTwits counts and top
+messages, price moves and fundamentals shown on the page; it never sees Reddit. Output is a
+validated JSON object (structured outputs). Briefs are cached in `output/brief_<TICKER>.json` and
+regenerated every `BRIEF_HOURS` (default 12), or after 2 hours when new headlines arrived, or
+on demand with `python3 be_news_agent.py --brief`.
+
+Settings (Render → Environment): `ANTHROPIC_API_KEY` (required), `BRIEF_LANG` (`en` default,
+`ru` for Russian), `BRIEF_MODEL` (`claude-opus-5` default; `claude-sonnet-5` is about 2.5x cheaper),
+`BRIEF_HOURS`. Cost with Opus 5 is roughly 2-3 cents per brief; with 9 companies and two briefs a
+day that is around $0.45/day. `/api/health` → `briefs` shows generation times, token usage and
+errors per company.
+
+## Social section (StockTwits, Google Trends)
 Each company tab has a "Social" block: StockTwits messages in the last 24 h and 7 days with the
 bullish share (from the tags users set themselves), Reddit posts and upvotes in the big finance
 subreddits, a buzz ratio (last 24 h vs the average fully-covered day), a 30-day mentions chart,
