@@ -108,6 +108,17 @@ Settings (Render → Environment): `ANTHROPIC_API_KEY` (required), `BRIEF_LANG` 
 day that is around $0.45/day. `/api/health` → `briefs` shows generation times, token usage and
 errors per company.
 
+## Reading articles in full
+`articles.py` downloads the most important stories of the last 3 days (heuristic importance ≥ 2.5,
+up to 6 new per company per run) and extracts their text with trafilatura; the brief receives up to
+6 excerpts of 1,800 characters and is told to prefer the article's facts over the headline. Google
+News links are decoded through Google's own endpoint, which rate-limits by IP: decodes are spaced
+3 s apart and capped at 15 per run, resolved URLs are remembered, failures retried after 2 h, and
+duplicate stories keep the direct Yahoo link. Sites that block automated readers (Barchart,
+simplywall.st, most paywalls) are skipped. The Mac uploads its article cache together with the
+StockTwits data, so a story blocked for the server can still arrive from home. Headlines that were
+read carry a "read in full" badge; the brief note shows how many were used.
+
 ## SEC filings and insiders (EDGAR)
 `edgar.py` reads the official EDGAR feed for each company with a CIK: filings of the last 120 days
 (8-K with item names, 10-Q/10-K, shelf registrations and prospectuses, 13D/13G stakes, Form 4/144) and
