@@ -67,6 +67,7 @@ def rebuild_page():
 
 
 def scheduler(hours):
+    rebuild_page()                              # serve the current template at once (a deploy may have changed it)
     refresh()                                   # first collection at start-up
     while True:
         time.sleep(hours * 3600)
