@@ -159,5 +159,35 @@
       "ORCL",
       "IREN"
     ]
+  },
+  {
+    "ticker": "IREN",
+    "name": "IREN LIMITED",
+    "exchange": "NASDAQ",
+    "query": "\"IREN LIMITED\" OR \"NASDAQ:IREN\"",
+    "match": "IREN\\ LIMITED|IREN",
+    "sector": "Financial Services",
+    "industry": "Capital Markets",
+    "benchmark": "WGMI",
+    "peers": [
+      "RIOT",
+      "MARA",
+      "CORZ"
+    ]
+  },
+  {
+    "ticker": "GEV",
+    "name": "GE Vernova",
+    "exchange": "NYSE",
+    "query": "\"GE Vernova\" OR \"NYSE:GEV\"",
+    "match": "GE\\ Vernova|GEV",
+    "sector": "Industrials",
+    "industry": "Specialty Industrial Machinery",
+    "benchmark": "XLI",
+    "peers": [
+      "SIEGY",
+      "MHK",
+      "PWR"
+    ]
   }
 ]

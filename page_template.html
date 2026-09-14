@@ -84,7 +84,20 @@ svg text{font-family:var(--font-mono);font-size:11px;fill:var(--muted)}
 .tag.pos{background:var(--pos-soft);color:var(--pos)}.tag.neg{background:var(--neg-soft);color:var(--neg)}
 .tag.read{background:var(--accent-soft);color:var(--accent)}
 .empty{padding:40px 0;color:var(--muted);text-align:center}
+.data{margin-top:8px;scroll-margin-top:12px}
+.jump{font-family:var(--font-mono);font-size:12px;color:var(--accent);text-decoration:none;white-space:nowrap}
+.controls .jump{margin-left:4px}
+h2.sec .jump{margin-left:auto}
+.jump:hover{text-decoration:underline}
+h2.sec .jump{font-weight:400}
+.data>section:first-of-type{border-top:1px solid var(--line)}
 footer{margin-top:28px;font-size:12px;color:var(--muted);line-height:1.6;max-width:70ch}
+/* Today */
+.today{background:var(--surface);border:1px solid var(--line);border-top:0;padding:14px 16px 12px}
+.today-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px}
+.today-head h2{font-family:var(--font-display);font-size:18px;font-weight:600;margin:0}
+.today-head small{font-family:var(--font-mono);font-size:11.5px;color:var(--muted)}
+.today .items{padding-top:4px}
 /* AI brief */
 .brief{background:var(--surface);border:1px solid var(--line);border-top:0;padding:16px 18px 14px}
 .brief-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px 14px}
@@ -315,6 +328,10 @@ h2.sec small{font-family:var(--font-mono);font-size:12px;color:var(--muted);font
 
 <div id="company-view">
 <div class="tiles" id="tiles"></div>
+<section class="today" id="today" hidden>
+  <div class="today-head"><h2>Today's headlines</h2><small id="todaynote"></small></div>
+  <div class="items" id="todaylist"></div>
+</section>
 <section class="brief" id="brief" hidden>
   <div class="brief-head"><h2>AI brief <span class="tone" id="btone"></span></h2><small id="bnote"></small></div>
   <div class="bnew" id="bnew" hidden><b>New since the previous brief</b><span id="bnewtxt"></span></div>
@@ -325,21 +342,40 @@ h2.sec small{font-family:var(--font-mono);font-size:12px;color:var(--muted);font
     <div><h3>Risks and open questions</h3><ul class="plain" id="brisks"></ul><h3>What to watch</h3><div class="watch" id="bwatch"></div></div>
   </div>
 </section>
+
+<div class="news">
+<div class="controls">
+  <input id="q" type="search" placeholder="Search headlines…" aria-label="Search headlines">
+  <div class="chips" id="chips" role="group" aria-label="Filter by tone"></div>
+  <select id="src" aria-label="Filter by source"><option value="">All sources</option></select>
+  <span class="count" id="count"></span>
+  <a class="jump" href="#company-data">Company data ↓</a>
+</div>
+<div id="timeline"></div>
+</div>
+<div class="data" id="company-data">
+<h2 class="sec" id="company-data-h">Company data <small>price, sector, short interest, filings, fundamentals, social</small><a class="jump" href="#company-view">↑ News</a></h2>
+<section class="chart">
+  <div class="chart-head"><h2 id="chart-title">Share price and news volume, last 90 days</h2>
+    <div class="legend"><span><i></i>close (USD)</span><span><i class="bar"></i>headlines per day</span></div></div>
+  <svg class="price" id="chart" viewBox="0 0 1100 300" role="img" aria-label="BE closing price line with daily headline counts"></svg>
+  <div class="tip" id="tip"></div>
+</section>
 <section class="rel" id="rel" hidden>
   <div class="rel-head"><h2>Versus sector and peers</h2><small id="relnote"></small></div>
   <div class="relgrid"><div><table class="rt" id="rtable"></table><div class="verdict" id="relverdict"></div></div>
   <div><svg id="relchart" viewBox="0 0 640 220" role="img" aria-label="Indexed performance, 3 months"></svg></div></div>
+</section>
+<section class="short" id="short" hidden>
+  <div class="short-head"><h2>Short interest</h2><small id="shnote"></small></div>
+  <div class="shgrid"><div><div class="sgrid" id="shtiles"></div><div class="verdict" id="shverdict"></div></div>
+  <div><svg id="shchart" viewBox="0 0 640 170" role="img" aria-label="Short interest over time"></svg></div></div>
 </section>
 <section class="sec" id="sec" hidden>
   <div class="sec-head"><h2>SEC filings and insiders</h2><small id="secnote"></small></div>
   <div class="sgrid" id="secgrid-tiles"></div>
   <div class="secgrid"><div><h3>Recent filings</h3><ul class="flist" id="flist"></ul></div>
   <div><h3>Insider transactions, 90 days</h3><div id="insider"></div></div></div>
-</section>
-<section class="short" id="short" hidden>
-  <div class="short-head"><h2>Short interest</h2><small id="shnote"></small></div>
-  <div class="shgrid"><div><div class="sgrid" id="shtiles"></div><div class="verdict" id="shverdict"></div></div>
-  <div><svg id="shchart" viewBox="0 0 640 170" role="img" aria-label="Short interest over time"></svg></div></div>
 </section>
 <section class="funds" id="funds" hidden>
   <div class="funds-head"><h2>Fundamentals</h2><small id="funds-note"></small></div>
@@ -355,20 +391,7 @@ h2.sec small{font-family:var(--font-mono);font-size:12px;color:var(--muted);font
   </div>
   <div class="posts" id="postcols"><div id="rdcol"><h3>Top on Reddit</h3><ul id="rdposts"></ul></div><div><h3>Most liked on StockTwits</h3><ul id="stposts"></ul></div></div>
 </section>
-<section class="chart">
-  <div class="chart-head"><h2 id="chart-title">Share price and news volume, last 90 days</h2>
-    <div class="legend"><span><i></i>close (USD)</span><span><i class="bar"></i>headlines per day</span></div></div>
-  <svg class="price" id="chart" viewBox="0 0 1100 300" role="img" aria-label="BE closing price line with daily headline counts"></svg>
-  <div class="tip" id="tip"></div>
-</section>
-
-<div class="controls">
-  <input id="q" type="search" placeholder="Search headlines…" aria-label="Search headlines">
-  <div class="chips" id="chips" role="group" aria-label="Filter by tone"></div>
-  <select id="src" aria-label="Filter by source"><option value="">All sources</option></select>
-  <span class="count" id="count"></span>
 </div>
-<div id="timeline"></div>
 </div>
 
 <footer>Short interest: Finviz snapshot taken on every refresh (percent of float, days to cover); for Nasdaq-listed names the official FINRA bi-monthly series via Nasdaq. Articles marked "read in full" were downloaded and their text given to the AI brief; sites that block automated readers are skipped. SEC filings and insider transactions from EDGAR (official, 90 days; open-market buys and sales only in the totals). Relative performance: daily closes from Yahoo Finance, sector ETF chosen by industry. Calendar: earnings dates from StockAnalysis, other dates extracted by Claude from the headlines. AI brief: generated by Claude from the headlines, StockTwits and price data shown on this page; it reports, it does not advise. Social: StockTwits public stream (bullish/bearish tags are set by the posters), Google Trends (relative search interest, 100 = peak of the period). Fundamentals: Finviz or StockAnalysis, refreshed with the news; trailing-twelve-month figures where applicable. Sources: Google News and Yahoo Finance RSS, de-duplicated, collected several times a day for every tracked company. "Most important" ranks headlines by a heuristic: real events (earnings, deals, lawsuits, launches) from major outlets score high; holdings filings, listicles and stock-tip pieces score low. Tone tags come from a keyword heuristic on the headline and are a reading aid, not investment advice. Times are shown in your local time zone.</footer>
@@ -526,7 +549,20 @@ function show(c){
   document.getElementById('eyebrow').textContent = `${c.exchange}: ${c.ticker} · daily news log`;
   document.getElementById('h1').innerHTML = `${esc(c.name)} <span>Newsroom</span>`;
   document.getElementById('chart-title').textContent = `${c.ticker} share price and news volume, last 90 days`;
-  renderTiles(c); renderBrief(c); renderRel(c); renderSec(c); renderShort(c); renderFunds(c); renderSocial(c); renderChart(c); buildFilters(c); render();
+  renderTiles(c); renderToday(c); renderBrief(c); renderRel(c); renderSec(c); renderShort(c); renderFunds(c); renderSocial(c); renderChart(c); buildFilters(c); render();
+}
+function renderToday(c){
+  const sec=document.getElementById('today');
+  const today=dayKey(new Date());
+  const items=c.items.filter(i=>dayKey(i.d)===today);
+  if(!items.length){ sec.hidden=true; return; }
+  sec.hidden=false;
+  const p=items.filter(i=>i.score>0).length, n=items.filter(i=>i.score<0).length;
+  document.getElementById('todaynote').textContent=`${items.length} headline${items.length===1?'':'s'}${(p||n)?` · ${p} up / ${n} down`:''}`;
+  document.getElementById('todaylist').innerHTML=items.map(i=>{const t=tone(i);
+    return `<article class="item ${t}"><div class="t">${fmtT.format(i.d)}</div><div class="s"></div><div>
+      <h3><a href="${esc(i.link)}" target="_blank" rel="noopener">${esc(i.title)}</a></h3>
+      <div class="m"><span>${esc(i.source)}</span>${t!=='neu'?`<span class="tag ${t}">${toneName[t]}</span>`:''}${i.read?'<span class="tag read" title="Full article text was read for the AI brief">read in full</span>':''}</div></div></article>`;}).join('');
 }
 
 const FUND_LABELS=[['market_cap','Market cap','Total value of all shares'],['pe','P/E','Price / earnings per share, trailing 12 months'],['fwd_pe','Forward P/E','Price / expected earnings next fiscal year'],['peg','PEG','P/E divided by expected earnings growth'],['ps','P/S','Price / sales per share'],['pb','P/B','Price / book value per share'],['ev_ebitda','EV/EBITDA','Enterprise value / EBITDA'],['eps','EPS (ttm)','Earnings per share, trailing 12 months'],['revenue','Revenue (ttm)',''],['net_income','Net income (ttm)',''],['rev_growth','Revenue growth','Year over year, trailing 12 months'],['gross_margin','Gross margin',''],['oper_margin','Operating margin',''],['net_margin','Net margin',''],['roe','ROE','Return on equity'],['debt_equity','Debt / equity',''],['div_yield','Dividend yield',''],['beta','Beta','Volatility vs the market (1 = market)'],['range_52w','52-week range',''],['short_float','Short float','Share of float sold short'],['short_ratio','Days to cover','Shares short / average daily volume'],['target','Analyst target',''],['earnings','Next earnings','Estimated until the company confirms it'],['perf_year','1-year change','']];
@@ -751,9 +787,11 @@ function render(){
   const closeByDay={}; active.closes.forEach(p=>closeByDay[dayKey(new Date(p.t))]=p.c);
   const list=items.filter(i=>(state.tone==='all'||tone(i)===state.tone)&&(!state.src||i.source===state.src)&&(!state.q||i.title.toLowerCase().includes(state.q)||i.source.toLowerCase().includes(state.q)));
   document.getElementById('count').textContent=`${list.length} of ${items.length} headlines`;
-  const groups=new Map(); list.forEach(i=>{const k=dayKey(i.d); if(!groups.has(k)) groups.set(k,[]); groups.get(k).push(i);});
+  const todayK=dayKey(new Date());
+  const groups=new Map(); list.forEach(i=>{const k=dayKey(i.d); if(k===todayK) return; if(!groups.has(k)) groups.set(k,[]); groups.get(k).push(i);});
   const tl=document.getElementById('timeline');
   if(!list.length){tl.innerHTML='<div class="empty">No headlines match these filters.</div>';return;}
+  if(!groups.size){tl.innerHTML='<div class="empty">Today’s headlines are above — nothing older yet.</div>';return;}
   let html='';
   for(const [k,arr] of groups){
     const d=arr[0].d; const c=closeByDay[k];
