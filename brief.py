@@ -186,6 +186,8 @@ def generate(company, hist, social, price, fund, out_dir, force=False, extra=Non
         return _failed(existing, f"API error {e.status_code}: {e.message}", out_dir, company)
     except anthropic.APIConnectionError as e:
         return _failed(existing, f"connection error: {e}", out_dir, company)
+    except Exception as e:  # noqa: BLE001  (SDK/type errors would otherwise vanish into the agent's log)
+        return _failed(existing, f"{type(e).__name__}: {str(e)[:200]}", out_dir, company)
     if response.stop_reason == "refusal":
         return _failed(existing, "model declined the request", out_dir, company)
     raw = next((b.text for b in response.content if b.type == "text"), "")
@@ -287,9 +289,12 @@ def weekly_digest(companies, per_company_text, out_dir, force=False):
         data = json.loads(raw)
     except Exception as e:  # noqa: BLE001
         print(f"[warn] weekly digest failed: {type(e).__name__}: {e}", file=sys.stderr)
-        if existing:
-            existing["error"] = f"{type(e).__name__}: {str(e)[:120]}"
-        return existing
+        result = existing or {"generated": None, "data": None}
+        result["error"] = f"{type(e).__name__}: {str(e)[:200]}"
+        result["failed_at"] = now.isoformat()
+        with open(path, "w") as f:
+            json.dump(result, f, ensure_ascii=False, indent=1)
+        return result
     result = {"generated": now.isoformat(), "week_ending": now.strftime("%Y-%m-%d"), "model": response.model, "error": None,
               "briefs_seen": briefs_now,
               "usage": {"input": response.usage.input_tokens, "output": response.usage.output_tokens}, "data": data}
@@ -333,11 +338,11 @@ def load_digest(out_dir):
 
 
 def _failed(existing, msg, out_dir, company):
+    """Record a failed attempt on disk so /api/health and the page show it (the previous brief is kept)."""
     print(f"[warn] brief for {company['ticker']}: {msg}", file=sys.stderr)
-    if existing:
-        existing["error"] = msg
-        return existing
-    result = {"generated": None, "error": msg, "data": None}
+    result = existing or {"generated": None, "data": None}
+    result["error"] = msg
+    result["failed_at"] = dt.datetime.now().astimezone().isoformat()
     with open(brief_file(out_dir, company["ticker"]), "w") as f:
-        json.dump(result, f)
+        json.dump(result, f, ensure_ascii=False, indent=1)
     return result
