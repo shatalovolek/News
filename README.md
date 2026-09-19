@@ -191,7 +191,7 @@ section per company: recommendation counts (strong buy … strong sell) with a s
 the consensus label, the next earnings date with EPS / revenue estimates (Finnhub's confirmed
 date replaces the StockAnalysis estimate in the calendar) and whether the last report beat or
 missed. The same figures go into the AI brief. Finnhub's free tier (60 calls/min, personal use)
-is plenty: the agent makes three or four calls per company per run. Price targets are a paid Finnhub
+is plenty: the agent makes four or five calls per company per run. The free earnings calendar only lists upcoming dates, so the last report comes from the earnings-surprises endpoint (EPS only). Price targets are a paid Finnhub
 endpoint and are not fetched.
 
 Sentiment dots are a simple keyword heuristic, not investment advice.

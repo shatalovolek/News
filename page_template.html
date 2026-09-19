@@ -678,7 +678,7 @@ function renderAnalysts(c){
   }
   if(le&&le.eps_actual!=null&&le.eps_estimate!=null){
     const diff=le.eps_actual-le.eps_estimate, pct=le.eps_estimate?diff/Math.abs(le.eps_estimate)*100:null;
-    tiles+=`<div class="f"><div class="k">Last report</div><div class="v ${diff>0?'bull':diff<0?'bear':''}">${diff>0?'Beat':diff<0?'Miss':'In line'}</div><div class="sub">${fmtD.format(new Date(le.date+'T12:00'))} · EPS ${le.eps_actual.toFixed(2)} vs ${le.eps_estimate.toFixed(2)}${pct!=null?' ('+(pct>0?'+':'')+pct.toFixed(0)+'%)':''}</div></div>`;
+    tiles+=`<div class="f"><div class="k">Last report</div><div class="v ${diff>0?'bull':diff<0?'bear':''}">${diff>0?'Beat':diff<0?'Miss':'In line'}</div><div class="sub">${le.period_end?(le.quarter||'quarter')+' · ended ':''}${fmtD.format(new Date(le.date+'T12:00'))} · EPS ${le.eps_actual.toFixed(2)} vs ${le.eps_estimate.toFixed(2)}${pct!=null?' ('+(pct>0?'+':'')+pct.toFixed(0)+'%)':''}</div></div>`;
   }
   document.getElementById('antiles').innerHTML=tiles;
   document.getElementById('anverdict').textContent=A.counts?(chg>=3?'Analysts have turned more positive over the last quarter.':chg<=-3?'Analysts have turned more cautious over the last quarter.':'Analyst views are broadly unchanged over the last quarter.'):'';

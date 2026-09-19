@@ -118,6 +118,18 @@ def update_analysts(company, out_dir):
         print(f"[warn] Finnhub earnings calendar for {ticker} failed: {e}", file=sys.stderr)
         rec["next_earnings"] = prev.get("next_earnings")
         rec["last_earnings"] = prev.get("last_earnings")
+    if not rec.get("last_earnings"):
+        # the free calendar only lists upcoming dates; earnings surprises cover the last quarters
+        try:
+            sur = sorted(_get("stock/earnings", symbol=ticker) or [], key=lambda r: r.get("period", ""))
+            if sur and sur[-1].get("actual") is not None:
+                q = sur[-1]
+                rec["last_earnings"] = {"date": q.get("period"), "period_end": True, "hour": "",
+                                        "quarter": f"Q{q['quarter']} {q['year']}" if q.get("quarter") and q.get("year") else "",
+                                        "eps_estimate": q.get("estimate"), "eps_actual": q.get("actual"),
+                                        "revenue_estimate": None, "revenue_actual": None}
+        except Exception as e:  # noqa: BLE001
+            print(f"[warn] Finnhub earnings surprises for {ticker} failed: {e}", file=sys.stderr)
 
     if not rec.get("recommendations") and not rec.get("next_earnings") and not rec.get("last_earnings"):
         return prev or None
@@ -182,7 +194,9 @@ def describe(summary):
     le = summary.get("last_earnings")
     if le and le.get("eps_actual") is not None and le.get("eps_estimate") is not None:
         diff = le["eps_actual"] - le["eps_estimate"]
-        lines.append(f"Last report {le['date']}: EPS {le['eps_actual']:.2f} vs {le['eps_estimate']:.2f} est. "
+        when = f"for the quarter ended {le['date']}" if le.get("period_end") else le["date"]
+        lines.append(f"Last report {when}{' (' + le['quarter'] + ')' if le.get('quarter') else ''}: "
+                     f"EPS {le['eps_actual']:.2f} vs {le['eps_estimate']:.2f} est. "
                      f"({'beat' if diff > 0 else 'miss' if diff < 0 else 'in line'}).")
     return " ".join(lines)
 
