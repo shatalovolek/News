@@ -172,41 +172,4 @@ def summarize(rec):
     return out
 
 
-def describe(summary):
-    """One paragraph for the AI brief."""
-    if not summary:
-        return ""
-    lines = []
-    if summary.get("counts"):
-        c = summary["counts"]
-        lines.append(f"Analyst recommendations (Finnhub, {summary['period']}): {summary['consensus']} — "
-                     f"{c['strong_buy']} strong buy, {c['buy']} buy, {c['hold']} hold, {c['sell']} sell, "
-                     f"{c['strong_sell']} strong sell ({summary['analysts']} analysts).")
-    ne = summary.get("next_earnings")
-    if ne and ne.get("date"):
-        est = []
-        if ne.get("eps_estimate") is not None:
-            est.append(f"EPS est. {ne['eps_estimate']:.2f}")
-        if ne.get("revenue_estimate"):
-            est.append(f"revenue est. {_money(ne['revenue_estimate'])}")
-        lines.append(f"Next earnings {ne['date']} {ne.get('hour') or ''} {ne.get('quarter') or ''}"
-                     + (f" ({', '.join(est)})" if est else "") + ".")
-    le = summary.get("last_earnings")
-    if le and le.get("eps_actual") is not None and le.get("eps_estimate") is not None:
-        diff = le["eps_actual"] - le["eps_estimate"]
-        when = f"for the quarter ended {le['date']}" if le.get("period_end") else le["date"]
-        lines.append(f"Last report {when}{' (' + le['quarter'] + ')' if le.get('quarter') else ''}: "
-                     f"EPS {le['eps_actual']:.2f} vs {le['eps_estimate']:.2f} est. "
-                     f"({'beat' if diff > 0 else 'miss' if diff < 0 else 'in line'}).")
-    return " ".join(lines)
 
-
-def _money(v):
-    try:
-        v = float(v)
-    except (TypeError, ValueError):
-        return str(v)
-    for unit, div in (("B", 1e9), ("M", 1e6)):
-        if abs(v) >= div:
-            return f"${v / div:.2f}{unit}"
-    return f"${v:,.0f}"

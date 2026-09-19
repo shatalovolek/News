@@ -12,7 +12,6 @@ Environment:
     PORT           port to listen on (Render sets it)
     DATA_DIR       where histories, pictures and companies.json live (mount a Render disk here)
     REFRESH_HOURS  how often to re-collect news while running (default 2)
-    ANTHROPIC_API_KEY  enables the AI briefs (brief.py); BRIEF_MODEL, BRIEF_LANG, BRIEF_HOURS tune them
     UPLOAD_TOKEN   shared secret; the Mac uses it to upload StockTwits data it collected
                    (StockTwits blocks datacenter addresses, home connections work)
     GITHUB_TOKEN   fine-grained GitHub token (Contents: read/write on the repo). With it, companies
@@ -85,20 +84,6 @@ def _social_errors():
     return out
 
 
-def _brief_status():
-    import brief
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        return {"enabled": False}
-    dg = brief.load_digest(agent.OUT_DIR) or {}
-    out = {"enabled": True, "model": brief.MODEL, "lang": brief.LANG, "companies": {},
-           "digest": {"generated": dg.get("generated"), "error": dg.get("error"), "usage": dg.get("usage")}}
-    for c in agent.load_companies():
-        b = brief.load_brief(agent.OUT_DIR, c["ticker"]) or {}
-        out["companies"][c["ticker"]] = {"generated": b.get("generated"), "error": b.get("error"),
-                                         "usage": b.get("usage")}
-    return out
-
-
 def _mounted(path):
     """True when `path` is its own mount point (a Render disk), False for a plain folder."""
     try:
@@ -155,7 +140,7 @@ class Handler(BaseHTTPRequestHandler):
                                     "last_error": STATE["last_error"], "companies": len(agent.load_companies()),
                                     "persistent": bool(os.environ.get("GITHUB_TOKEN") or os.environ.get("DATA_DIR")),
                                     "data_dir": agent.OUT_DIR, "disk_mounted": _mounted(agent.OUT_DIR),
-                                    "social_errors": _social_errors(), "briefs": _brief_status()})
+                                    "social_errors": _social_errors()})
         if path == "/api/companies":
             return self._send(200, agent.load_companies())
         if path.startswith("/pictures/"):

@@ -1,5 +1,4 @@
 requests>=2.31
 Pillow>=10
 pytrends>=4.9
-anthropic>=1.0
 trafilatura>=1.12

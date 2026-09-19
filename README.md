@@ -93,64 +93,42 @@ From then on every add/remove on the site is committed to `companies.json` with
 starts from the updated list. The add panel warns when persistence is off.
 With the disk in place the token is optional; it only adds a copy of the list in the repo.
 
-## AI brief (Claude)
-With `ANTHROPIC_API_KEY` set on the server, `brief.py` writes a brief per company: a summary of
-what happened in the last 3 days, tone, themes, key events linked to their sources, retail mood
-from StockTwits, risks and what to watch. It reads the headlines, StockTwits counts and top
-messages, price moves and fundamentals shown on the page; it never sees Reddit. Output is a
-validated JSON object (structured outputs). Briefs are cached in `output/brief_<TICKER>.json` and
-regenerated every `BRIEF_HOURS` (default 12), or after 2 hours when new headlines arrived, or
-on demand with `python3 be_news_agent.py --brief`.
-
-Settings (Render → Environment): `ANTHROPIC_API_KEY` (required), `BRIEF_LANG` (`en` default,
-`ru` for Russian), `BRIEF_MODEL` (`claude-opus-5` default; `claude-sonnet-5` is about 2.5x cheaper),
-`BRIEF_HOURS`. Cost with Opus 5 is roughly 2-3 cents per brief; with 9 companies and two briefs a
-day that is around $0.45/day. `/api/health` → `briefs` shows generation times, token usage and
-errors per company.
-
 ## Short interest
 `shorts.py` stores a dated Finviz snapshot on every run (short % of float, days to cover, shares
 short, float) and, for Nasdaq-listed names, the official FINRA bi-monthly series from Nasdaq's API
 (settlement date, shares short, average volume, days to cover). The page shows four tiles, a
 change-versus-previous-report verdict and a history chart (FINRA series where available, otherwise
-the accumulated snapshots); the Summary card carries the short % and the brief gets one line.
+the accumulated snapshots); the Summary card carries the short %.
 The Mac uploads its copy with the StockTwits data in case Nasdaq blocks the server.
 
 ## Reading articles in full
 `articles.py` downloads the most important stories of the last 3 days (heuristic importance ≥ 2.5,
-up to 6 new per company per run) and extracts their text with trafilatura; the brief receives up to
-6 excerpts of 1,800 characters and is told to prefer the article's facts over the headline. Google
+up to 6 new per company per run) and extracts their text with trafilatura. Google
 News links are decoded through Google's own endpoint, which rate-limits by IP: decodes are spaced
 3 s apart and capped at 15 per run, resolved URLs are remembered, failures retried after 2 h, and
 duplicate stories keep the direct Yahoo link. Sites that block automated readers (Barchart,
 simplywall.st, most paywalls) are skipped. The Mac uploads its article cache together with the
 StockTwits data, so a story blocked for the server can still arrive from home. Headlines that were
-read carry a "read in full" badge; the brief note shows how many were used.
+read carry a "read in full" badge.
 
 ## SEC filings and insiders (EDGAR)
 `edgar.py` reads the official EDGAR feed for each company with a CIK: filings of the last 120 days
 (8-K with item names, 10-Q/10-K, shelf registrations and prospectuses, 13D/13G stakes, Form 4/144) and
 parses Form 4 insider transactions (open-market buys and sales, grants, option exercises, gifts).
 The page shows 90-day insider buy/sell totals, the last 8-K, share-offering and large-holder flags,
-the filing list and the transaction table; the brief gets the same facts. Foreign ADRs without a CIK
+the filing list and the transaction table. Foreign ADRs without a CIK
 show "no SEC registrant". The SEC requires a User-Agent with a contact address (set in `edgar.py`).
 
 ## Versus sector and peers
 `relative.py` compares each company with SPY, a sector/industry ETF (chosen from Yahoo's sector and
 industry, `relative.SECTOR_ETF` / `INDUSTRY_ETF`) and up to 3 peers over 1 day, 1 week, 1 month and
 3 months, with an indexed 3-month chart. `benchmark` and `peers` live in `companies.json` and are
-filled automatically when a company is added (Yahoo for the sector; Claude suggests peers when the
-API key is set; `DEFAULT_PEERS` in the agent covers the initial list). Edit them by hand any time.
+filled automatically when a company is added (Yahoo for the sector; `DEFAULT_PEERS` in the agent
+covers the initial list, other companies start without peers). Edit them by hand any time.
 
-## Calendar, what's new, weekly digest
-- **Calendar** (Summary tab): next 60 days across all companies: estimated earnings dates from
-  StockAnalysis plus dated events Claude extracts from the headlines (index inclusions, launches,
-  votes, lock-ups).
-- **New since the previous brief**: every brief receives the previous one and reports what changed.
-  Brief history is kept in `output/brief_history_<TICKER>.json` (30 entries).
-- **Week in review** (Summary tab): one cross-company digest generated from the week's briefs,
-  relative performance and calendar; regenerated when older than 6 days, or with
-  `python3 be_news_agent.py --digest`.
+## Calendar
+Summary tab: the next 60 days across all companies — confirmed earnings dates from Finnhub when
+configured, otherwise StockAnalysis estimates.
 
 ## Social section (StockTwits, Google Trends)
 Each company tab has a "Social" block: StockTwits messages in the last 24 h and 7 days with the
@@ -190,7 +168,7 @@ as a fourth feed — company news by ticker, no keyword filtering needed — and
 section per company: recommendation counts (strong buy … strong sell) with a six-month history,
 the consensus label, the next earnings date with EPS / revenue estimates (Finnhub's confirmed
 date replaces the StockAnalysis estimate in the calendar) and whether the last report beat or
-missed. The same figures go into the AI brief. Finnhub's free tier (60 calls/min, personal use)
+missed. Finnhub's free tier (60 calls/min, personal use)
 is plenty: the agent makes four or five calls per company per run. The free earnings calendar only lists upcoming dates, so the last report comes from the earnings-surprises endpoint (EPS only). Price targets are a paid Finnhub
 endpoint and are not fetched.
 

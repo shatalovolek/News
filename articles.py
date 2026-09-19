@@ -1,5 +1,5 @@
 """
-Full-text reading of the most important articles, so the brief sees more than headlines.
+Full-text reading of the most important articles (the page marks them "read in full").
 
 For each company: take the last 3 days of headlines, rank by importance, resolve the link
 (Google News links are decoded through Google's own endpoint), download the page and extract
@@ -200,20 +200,6 @@ def merge_store(store, incoming):
             store[k] = v
     return store
 
-
-def block_for_brief(store, heads, max_articles=6, max_chars=1800):
-    """ARTICLE TEXT block for the brief input; heads are the headline dicts with their [id] order."""
-    parts = []
-    for i, h in enumerate(heads):
-        rec = store.get(h["link"])
-        if rec and rec.get("ok") and rec.get("text"):
-            body = " ".join(rec["text"].split())[:max_chars]
-            parts.append(f"[{i}] {h['source']}: {body}")
-        if len(parts) >= max_articles:
-            break
-    if not parts:
-        return None
-    return "ARTICLE TEXT (excerpts of the articles behind some headline ids above):\n" + "\n\n".join(parts)
 
 
 def read_set(store):

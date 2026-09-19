@@ -132,16 +132,3 @@ def summarize(store):
     return out
 
 
-def describe(sm):
-    if not sm or sm.get("short_float") is None and not sm.get("official_shares"):
-        return "SHORT INTEREST: no data"
-    bits = []
-    if sm.get("short_float") is not None:
-        bits.append(f"{sm['short_float']:.1f}% of float short")
-    if sm.get("short_ratio") is not None:
-        bits.append(f"days to cover {sm['short_ratio']:.1f}")
-    if sm.get("official_shares"):
-        bits.append(f"FINRA {sm['official_date']}: {sm['official_shares']/1e6:.1f}M shares short")
-    if sm.get("change_pct") is not None:
-        bits.append(f"change vs previous report {sm['change_pct']:+.1f}% (since {sm['change_since']})")
-    return "SHORT INTEREST: " + ", ".join(bits)

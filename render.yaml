@@ -23,7 +23,6 @@ services:
       - key: DATA_DIR             # everything the agent writes lives on the disk
         value: /data
       # Optional, set in the dashboard, never here:
-      #   ANTHROPIC_API_KEY     enables the AI briefs; BRIEF_LANG=ru for Russian, BRIEF_MODEL to change the model
       #   GITHUB_TOKEN          also commits companies.json to the repo
       #   REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET   enable Reddit in the Social section
       #   TAVILY_API_KEY        adds Tavily news search to the feeds, and Tavily /extract as a

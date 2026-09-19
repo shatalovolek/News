@@ -65,13 +65,3 @@ def compare(company_ticker, series_by_ticker, benchmark, peers, names):
             "as_of": dt.datetime.now().astimezone().isoformat()}
 
 
-def describe(rel):
-    """One line for the brief input."""
-    if not rel or not rel.get("rows"):
-        return "RELATIVE PERFORMANCE: no data"
-    def fmt(r):
-        return ", ".join(f"{w} {v:+.1f}%" for w, v in r["returns"].items() if v is not None)
-    parts = [f"{r['ticker']} ({r['role']}): {fmt(r)}" for r in rel["rows"]]
-    ex = rel.get("excess", {}).get("1w", {})
-    tail = f" | company minus sector over 1w: {ex.get('vs_sector'):+.1f}pp" if ex.get("vs_sector") is not None else ""
-    return "RELATIVE PERFORMANCE (" + "; ".join(parts) + ")" + tail

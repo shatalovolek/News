@@ -158,7 +158,7 @@ def _save(store, out_dir, ticker):
 
 
 def summarize(store, days=90):
-    """Numbers for the page and the brief."""
+    """Numbers for the page."""
     cutoff = (dt.date.today() - dt.timedelta(days=days)).isoformat()
     ins = [x for x in store.get("insider", []) if (x.get("date") or "") >= cutoff]
     buys = [x for x in ins if x["code"] == "P"]
