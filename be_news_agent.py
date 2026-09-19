@@ -3,7 +3,8 @@
 Daily stock-news agent (Bloom Energy, Amazon, Google, SanDisk, ... see companies.json).
 
 For every company in companies.json it collects the day's news from Google News and
-Yahoo Finance (plus Tavily search when TAVILY_API_KEY is set), pulls the share price,
+Yahoo Finance (plus Tavily search when TAVILY_API_KEY is set, and Finnhub company news,
+analyst recommendations and the earnings calendar when FINNHUB_API_KEY is set), pulls the share price,
 renders a PNG "news photo" per company, keeps a growing history, and rebuilds
 output/news.html (one tab per company).
 
@@ -36,6 +37,7 @@ from PIL import Image, ImageDraw, ImageFont
 import social
 import brief
 import edgar
+import finnhub
 import relative
 import articles
 import shorts
@@ -297,6 +299,7 @@ def collect_news(company, hours):
     for name, url in feeds_for(company).items():
         all_items.extend(fetch_feed(name, url))
     all_items.extend(fetch_tavily(company, hours))
+    all_items.extend(finnhub.company_news(company, hours))
     now = dt.datetime.now(dt.timezone.utc)
     cutoff = now - dt.timedelta(hours=hours)
     seen, fresh = {}, []
@@ -753,6 +756,7 @@ def build_page(companies, results):
             "brief": brief.load_brief(OUT_DIR, c["ticker"]),
             "edgar": edgar.summarize(edgar._load(OUT_DIR, c["ticker"])),
             "short": shorts.summarize(shorts.load(OUT_DIR, c["ticker"])),
+            "analysts": finnhub.summarize(finnhub.load(OUT_DIR, c["ticker"])),
             "relative": load_relative(c["ticker"]),
             "calendar": calendar_for(c),
             "benchmark": c.get("benchmark"), "peers": c.get("peers", []),
@@ -813,6 +817,11 @@ def run_all(hours=24, backfill=False, only=None, verbose=True, pictures=True, pu
         price = fetch_price(c["ticker"])
         series_cache[c["ticker"]] = (price or {}).get("series") or []
         fund = fetch_fundamentals(c["ticker"])
+        # analyst recommendations + earnings calendar (Finnhub, opt-in)
+        try:
+            finnhub.update_analysts(c, OUT_DIR)
+        except Exception as e:  # noqa: BLE001
+            print(f"[warn] finnhub analysts for {c['ticker']} failed: {e}", file=sys.stderr)
         # short interest (Finviz snapshot + Nasdaq/FINRA series)
         try:
             shorts.update_short(c, (fund or {}).get("values"), OUT_DIR)
@@ -865,7 +874,8 @@ def run_all(hours=24, backfill=False, only=None, verbose=True, pictures=True, pu
                 soc = social.summarize(social._load(social.social_file(OUT_DIR, c["ticker"])))
                 extra = [brief.edgar_block(edgar.summarize(edgar._load(OUT_DIR, c["ticker"]))),
                          relative.describe(load_relative(c["ticker"])),
-                         shorts.describe(shorts.summarize(shorts.load(OUT_DIR, c["ticker"])))]
+                         shorts.describe(shorts.summarize(shorts.load(OUT_DIR, c["ticker"]))),
+                         finnhub.describe(finnhub.summarize(finnhub.load(OUT_DIR, c["ticker"])))]
                 b = brief.generate(c, hist, soc, price, fund, OUT_DIR, force=force_brief, extra=extra, art_store=art_store)
                 if verbose and b and b.get("data"):
                     print(f"    brief: {b['data']['tone']} · {b['data']['summary'][:90]}…")
@@ -919,14 +929,20 @@ def load_relative(ticker):
 
 
 def calendar_for(c):
-    """Dated upcoming events for one company: next earnings + events Claude found in the news."""
+    """Dated upcoming events for one company: next earnings (Finnhub's confirmed date first,
+    StockAnalysis' estimate otherwise) + events Claude found in the news."""
     events, seen = [], set()
+    ne = (finnhub.load(OUT_DIR, c["ticker"]) or {}).get("next_earnings") or {}
+    if ne.get("date") and ne["date"] >= dt.date.today().isoformat():
+        what = "Earnings report" + (f" ({ne['quarter']})" if ne.get("quarter") else "") + (f", {ne['hour']}" if ne.get("hour") else "")
+        events.append({"date": ne["date"], "what": what, "source": "Finnhub"})
+        seen.add(ne["date"])
     try:
         with open(fundamentals_file(c["ticker"])) as f:
             v = json.load(f).get("values", {})
         if v.get("earnings"):
             d = dt.datetime.strptime(v["earnings"], "%b %d, %Y").date()
-            if d >= dt.date.today():
+            if d >= dt.date.today() and not seen:
                 events.append({"date": d.isoformat(), "what": "Earnings report (estimated until confirmed)", "source": "StockAnalysis"})
                 seen.add(d.isoformat())
     except Exception:  # noqa: BLE001

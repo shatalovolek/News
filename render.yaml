@@ -28,3 +28,5 @@ services:
       #   REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET   enable Reddit in the Social section
       #   TAVILY_API_KEY        adds Tavily news search to the feeds, and Tavily /extract as a
       #                         fallback when our own scrape can't read an article page
+      #   FINNHUB_API_KEY       adds Finnhub company news to the feeds, plus the Analysts section
+      #                         (recommendation trends, next earnings date with consensus estimates)

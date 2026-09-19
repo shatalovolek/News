@@ -184,6 +184,16 @@ feed — broader and often fresher than the RSS feeds, and its links are already
 robots block). Tavily has a free tier (~1000 credits/month); each search is 1 credit,
 extraction is 1 credit per 5 successful URLs.
 
+Optionally, set `FINNHUB_API_KEY` (Render → Environment; locally a one-line `finnhub.key` next
+to the script, which `install_schedule.sh` also picks up) to add [Finnhub](https://finnhub.io)
+as a fourth feed — company news by ticker, no keyword filtering needed — and an **Analysts**
+section per company: recommendation counts (strong buy … strong sell) with a six-month history,
+the consensus label, the next earnings date with EPS / revenue estimates (Finnhub's confirmed
+date replaces the StockAnalysis estimate in the calendar) and whether the last report beat or
+missed. The same figures go into the AI brief. Finnhub's free tier (60 calls/min, personal use)
+is plenty: the agent makes three or four calls per company per run. Price targets are a paid Finnhub
+endpoint and are not fetched.
+
 Sentiment dots are a simple keyword heuristic, not investment advice.
 
 Requires Python 3 with `requests` and `Pillow` (already installed on this Mac).

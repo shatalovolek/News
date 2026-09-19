@@ -7,12 +7,18 @@ LABEL=com.alexdrone.be-news-agent
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 PY="$(which python3)"
 mkdir -p "$HOME/Library/LaunchAgents" "$DIR/output"
-# launchd doesn't read .zshrc, so any TAVILY_API_KEY export in the shell is invisible to it;
-# pull it from tavily.key (gitignored, one line) next to the script instead.
-ENV_BLOCK=""
+# launchd doesn't read .zshrc, so any TAVILY_API_KEY / FINNHUB_API_KEY export in the shell is
+# invisible to it; pull them from tavily.key / finnhub.key (gitignored, one line) next to the script.
+ENV_VARS=""
 if [ -f "$DIR/tavily.key" ]; then
-  TAVILY_KEY="$(tr -d '[:space:]' < "$DIR/tavily.key")"
-  ENV_BLOCK="  <key>EnvironmentVariables</key><dict><key>TAVILY_API_KEY</key><string>$TAVILY_KEY</string></dict>"
+  ENV_VARS="$ENV_VARS<key>TAVILY_API_KEY</key><string>$(tr -d '[:space:]' < "$DIR/tavily.key")</string>"
+fi
+if [ -f "$DIR/finnhub.key" ]; then
+  ENV_VARS="$ENV_VARS<key>FINNHUB_API_KEY</key><string>$(tr -d '[:space:]' < "$DIR/finnhub.key")</string>"
+fi
+ENV_BLOCK=""
+if [ -n "$ENV_VARS" ]; then
+  ENV_BLOCK="  <key>EnvironmentVariables</key><dict>$ENV_VARS</dict>"
 fi
 cat > "$PLIST" <<PL
 <?xml version="1.0" encoding="UTF-8"?>
