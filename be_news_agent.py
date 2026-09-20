@@ -956,7 +956,7 @@ def main():
     ap.add_argument("--companies-from", metavar="URL", help="use the company list of a running site instead of the local one")
     args = ap.parse_args()
 
-    push = push_config() if args.push else None
+    push = push_config() if (args.push or args.push_briefs) else None
     if args.push and not push:
         print("[warn] --push given but push.json / PUSH_URL+PUSH_TOKEN missing; not uploading", file=sys.stderr)
     if args.companies_from or (push and not args.companies_from):
