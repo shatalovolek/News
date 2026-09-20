@@ -93,6 +93,17 @@ From then on every add/remove on the site is committed to `companies.json` with
 starts from the updated list. The add panel warns when persistence is off.
 With the disk in place the token is optional; it only adds a copy of the list in the repo.
 
+## AI brief (written in Claude Code)
+Each company tab has an "AI brief" block and the Summary tab a "Daily briefs" row: summary, tone,
+themes, key events linked to their sources, risks and what to watch. The brief is written on the
+Mac in a Claude Code session, on request, from the data the agent already collected (headlines,
+article texts, EDGAR, Finnhub, StockTwits); it is saved as `output/brief_<TICKER>.json` and uploaded
+with `python3 be_news_agent.py --push-briefs` (same endpoint and token as the social upload; the
+regular `--push` run sends it too). The server only stores and shows it; no API key is needed.
+Brief JSON: `{"generated", "source", "headlines_used", "data": {"summary", "tone"
+(positive/negative/mixed), "themes", "key_events": [{"what", "why_it_matters", "headlines"}],
+"risks", "watch"}}`.
+
 ## Short interest
 `shorts.py` stores a dated Finviz snapshot on every run (short % of float, days to cover, shares
 short, float) and, for Nasdaq-listed names, the official FINRA bi-monthly series from Nasdaq's API

@@ -204,6 +204,17 @@ def absorb_upload(payload, out_dir):
         merged = _articles.merge_store(_articles.load(out_dir, t), payload["articles"])
         with open(_articles.articles_file(out_dir, t), "w") as f:
             json.dump(merged, f, ensure_ascii=False)
+    if payload.get("brief") and payload["brief"].get("data"):
+        # the brief is written on the Mac (Claude Code); keep the newest one
+        path = os.path.join(out_dir, f"brief_{t}.json")
+        try:
+            with open(path) as f:
+                current = json.load(f).get("generated") or ""
+        except Exception:  # noqa: BLE001
+            current = ""
+        if (payload["brief"].get("generated") or "") >= current:
+            with open(path, "w") as f:
+                json.dump(payload["brief"], f, ensure_ascii=False, indent=1)
     errs = store.get("errors") or {}
     for key in ("stocktwits", "reddit", "trends"):
         if payload.get(key):
@@ -219,7 +230,8 @@ def push_store(store, ticker, url, token, source="mac"):
     """Client side: send this company's social store to the server."""
     payload = {"ticker": ticker, "source": source, "stocktwits": store.get("stocktwits", []),
                "reddit": store.get("reddit", []), "trends": store.get("trends", []),
-               "articles": store.get("articles") or {}, "short": store.get("short") or None}
+               "articles": store.get("articles") or {}, "short": store.get("short") or None,
+               "brief": store.get("brief") or None}
     r = requests.post(url.rstrip("/") + "/api/social/upload", json=payload,
                       headers={"X-Upload-Token": token, "User-Agent": UA}, timeout=60)
     r.raise_for_status()

@@ -748,6 +748,7 @@ def build_page(companies, results):
             "social": social.summarize(social._load(social.social_file(OUT_DIR, c["ticker"]))),
             "edgar": edgar.summarize(edgar._load(OUT_DIR, c["ticker"])),
             "short": shorts.summarize(shorts.load(OUT_DIR, c["ticker"])),
+            "brief": load_brief(c["ticker"]),
             "analysts": finnhub.summarize(finnhub.load(OUT_DIR, c["ticker"])),
             "relative": load_relative(c["ticker"]),
             "calendar": calendar_for(c),
@@ -843,6 +844,7 @@ def run_all(hours=24, backfill=False, only=None, verbose=True, pictures=True, pu
                 try:
                     store["articles"] = articles.load(OUT_DIR, c["ticker"])   # publishers rarely block a home connection
                     store["short"] = shorts.load(OUT_DIR, c["ticker"])         # Nasdaq's API may block the server too
+                    store["brief"] = load_brief(c["ticker"])                   # written in Claude Code, lives on the Mac
                     msg = social.push_store(store, c["ticker"], push["url"], push["token"])
                     if verbose:
                         print(f"    pushed social -> {msg.get('message')}")
@@ -878,6 +880,35 @@ def run_all(hours=24, backfill=False, only=None, verbose=True, pictures=True, pu
     if page and verbose:
         print(f"page {page}")
     return companies, summary
+
+
+def brief_file(ticker):
+    return os.path.join(OUT_DIR, f"brief_{ticker}.json")
+
+
+def load_brief(ticker):
+    """The AI brief written for this company (brief_<T>.json), or None. Written in Claude Code and
+    uploaded with --push-briefs; the server only stores and shows it."""
+    try:
+        with open(brief_file(ticker)) as f:
+            b = json.load(f)
+        return b if b.get("data") else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def push_briefs(push, companies=None):
+    """Upload every local brief_<T>.json to the site (same endpoint and token as the social upload)."""
+    sent = []
+    for c in companies or load_companies():
+        b = load_brief(c["ticker"])
+        if not b:
+            continue
+        r = requests.post(push["url"].rstrip("/") + "/api/social/upload", json={"ticker": c["ticker"], "source": "mac", "brief": b},
+                          headers={"X-Upload-Token": push["token"], "User-Agent": HEADERS["User-Agent"]}, timeout=60)
+        r.raise_for_status()
+        sent.append(c["ticker"])
+    return sent
 
 
 def load_relative(ticker):
@@ -921,6 +952,7 @@ def main():
     ap.add_argument("--add", metavar="TICKER_OR_NAME", help="add a company to track (e.g. NVDA or Tesla), then run it")
     ap.add_argument("--remove", metavar="TICKER", help="stop tracking a company")
     ap.add_argument("--push", action="store_true", help="upload collected social data to the website (needs push.json)")
+    ap.add_argument("--push-briefs", action="store_true", help="upload the local brief_<T>.json files to the website and exit")
     ap.add_argument("--companies-from", metavar="URL", help="use the company list of a running site instead of the local one")
     args = ap.parse_args()
 
@@ -937,6 +969,11 @@ def main():
         except Exception as e:  # noqa: BLE001
             print(f"[warn] could not read company list from {url}: {e}", file=sys.stderr)
 
+    if args.push_briefs:
+        if not push:
+            sys.exit("--push-briefs needs push.json / PUSH_URL+PUSH_TOKEN")
+        print("briefs uploaded:", ", ".join(push_briefs(push)) or "none found")
+        return
     if args.remove:
         print("removed" if remove_company(args.remove) else "not in the list", args.remove.upper())
         run_all(args.hours, only="", verbose=False)  # rebuild the page without it
