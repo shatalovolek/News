@@ -189,5 +189,20 @@
       "MHK",
       "PWR"
     ]
+  },
+  {
+    "ticker": "OKTA",
+    "name": "Okta",
+    "exchange": "NASDAQ",
+    "query": "\"Okta\" OR \"NASDAQ:OKTA\"",
+    "match": "Okta|OKTA",
+    "sector": "Technology",
+    "industry": "Software—Infrastructure",
+    "benchmark": "IGV",
+    "peers": [
+      "CRWD",
+      "ZS",
+      "CYBR"
+    ]
   }
 ]
