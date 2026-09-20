@@ -47,12 +47,18 @@ next time it wakes.
 Remove: `launchctl bootout gui/$(id -u)/com.alexdrone.be-news-agent`
 and delete `~/Library/LaunchAgents/com.alexdrone.be-news-agent.plist`.
 
+A second job, `install_brief_schedule.sh` (label `com.alexdrone.be-news-brief`, default 08:45),
+runs `daily_brief.py` once a day: it writes the AI brief with Claude Code and uploads it.
+Log: `output/brief.log`. See "AI brief" below.
+
 ## Web page tabs
 - **Summary** – every tracked company at a glance (price, day change, 30-day sparkline,
   headline counts) plus the most important news of the last 3 days across all companies,
   ranked by a heuristic (real events from major outlets up, holdings filings and
   stock-tip listicles down), and the top 3 stories per company.
-- **One tab per company** – price + news-volume chart and the full chronological log.
+- **One tab per company** – today's headlines, the AI brief, the headlines of the last 7 days,
+  then the company data (chart, sector and peers, short interest, analysts, filings, fundamentals,
+  social), and at the very bottom the older headlines.
 - **+ Add company** – type a ticker or a name. When the page is served by `server.py`
   the company is looked up on Yahoo, added, its news collected and a tab appears. On a
   static copy the panel shows the command to run instead:
@@ -93,13 +99,21 @@ From then on every add/remove on the site is committed to `companies.json` with
 starts from the updated list. The add panel warns when persistence is off.
 With the disk in place the token is optional; it only adds a copy of the list in the repo.
 
-## AI brief (written in Claude Code)
+## AI brief (written by Claude Code, no API key)
 Each company tab has an "AI brief" block and the Summary tab a "Daily briefs" row: summary, tone,
 themes, key events linked to their sources, risks and what to watch. The brief is written on the
-Mac in a Claude Code session, on request, from the data the agent already collected (headlines,
-article texts, EDGAR, Finnhub, StockTwits); it is saved as `output/brief_<TICKER>.json` and uploaded
-with `python3 be_news_agent.py --push-briefs` (same endpoint and token as the social upload; the
-regular `--push` run sends it too). The server only stores and shows it; no API key is needed.
+Mac by Claude Code under the user's subscription, from the data the agent already collected
+(headlines, article texts, EDGAR, Finnhub, StockTwits), saved as `output/brief_<TICKER>.json` and
+uploaded to the site (same endpoint and token as the social upload; the regular `--push` run
+sends it too). The server only stores and shows it.
+
+- **Daily, automatic**: `daily_brief.py` builds a dossier per company, runs the Claude Code CLI
+  headless (`claude -p` with a JSON schema), writes the files and uploads them. Installed as a
+  launchd job by `install_brief_schedule.sh` (08:45 by default). It finds the CLI on `PATH` or in
+  the VS Code extension bundle; `CLAUDE_BIN` overrides, `BRIEF_MODEL` picks the model. Options:
+  `--only BE,AMZN`, `--no-push`, `--dossier-only`.
+- **On request**: ask Claude Code in a chat session; it writes the same files and runs
+  `python3 be_news_agent.py --push-briefs`.
 Brief JSON: `{"generated", "source", "headlines_used", "data": {"summary", "tone"
 (positive/negative/mixed), "themes", "key_events": [{"what", "why_it_matters", "headlines"}],
 "risks", "watch"}}`.

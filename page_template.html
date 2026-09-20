@@ -85,6 +85,7 @@ svg text{font-family:var(--font-mono);font-size:11px;fill:var(--muted)}
 .tag.read{background:var(--accent-soft);color:var(--accent)}
 .empty{padding:40px 0;color:var(--muted);text-align:center}
 .data{margin-top:8px;scroll-margin-top:12px}
+.older{margin-top:8px;scroll-margin-top:12px}.older .sec{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
 .jump{font-family:var(--font-mono);font-size:12px;color:var(--accent);text-decoration:none;white-space:nowrap}
 .controls .jump{margin-left:4px}
 h2.sec .jump{margin-left:auto}
@@ -337,12 +338,14 @@ h2.sec small{font-family:var(--font-mono);font-size:12px;color:var(--muted);font
 </section>
 
 <div class="news">
+<h2 class="sec" id="recent-h">Last 7 days <small id="recentnote"></small></h2>
 <div class="controls">
   <input id="q" type="search" placeholder="Search headlines…" aria-label="Search headlines">
   <div class="chips" id="chips" role="group" aria-label="Filter by tone"></div>
   <select id="src" aria-label="Filter by source"><option value="">All sources</option></select>
   <span class="count" id="count"></span>
   <a class="jump" href="#company-data">Company data ↓</a>
+  <a class="jump" href="#older" id="older-jump" hidden>Older ↓</a>
 </div>
 <div id="timeline"></div>
 </div>
@@ -389,6 +392,10 @@ h2.sec small{font-family:var(--font-mono);font-size:12px;color:var(--muted);font
   </div>
   <div class="posts" id="postcols"><div id="rdcol"><h3>Top on Reddit</h3><ul id="rdposts"></ul></div><div><h3>Most liked on StockTwits</h3><ul id="stposts"></ul></div></div>
 </section>
+</div>
+<div class="news older" id="older" hidden>
+<h2 class="sec" id="older-h">Older headlines <small id="oldnote"></small><a class="jump" href="#company-view">↑ Top</a></h2>
+<div id="timeline-old"></div>
 </div>
 </div>
 
@@ -817,24 +824,31 @@ function render(){
   const closeByDay={}; active.closes.forEach(p=>closeByDay[dayKey(new Date(p.t))]=p.c);
   const list=items.filter(i=>(state.tone==='all'||tone(i)===state.tone)&&(!state.src||i.source===state.src)&&(!state.q||i.title.toLowerCase().includes(state.q)||i.source.toLowerCase().includes(state.q)));
   document.getElementById('count').textContent=`${list.length} of ${items.length} headlines`;
-  const todayK=dayKey(new Date());
-  const groups=new Map(); list.forEach(i=>{const k=dayKey(i.d); if(k===todayK) return; if(!groups.has(k)) groups.set(k,[]); groups.get(k).push(i);});
-  const tl=document.getElementById('timeline');
-  if(!list.length){tl.innerHTML='<div class="empty">No headlines match these filters.</div>';return;}
-  if(!groups.size){tl.innerHTML='<div class="empty">Today’s headlines are above — nothing older yet.</div>';return;}
-  let html='';
-  for(const [k,arr] of groups){
-    const d=arr[0].d; const c=closeByDay[k];
-    const p=arr.filter(i=>i.score>0).length, n=arr.filter(i=>i.score<0).length;
-    html+=`<section class="day"><div class="day-head"><div class="d">${fmtD.format(d)}</div><div class="w">${fmtW.format(d)}</div>
-      <div class="p">${arr.length} headline${arr.length===1?'':'s'}${(p||n)?` · <span class="up">${p}</span>/<span class="down">${n}</span>`:''}${c?`<br>close <b>$${c.toFixed(2)}</b>`:''}</div></div><div class="items">`;
-    arr.forEach(i=>{const t=tone(i);
-      html+=`<article class="item ${t}"><div class="t">${fmtT.format(i.d)}</div><div class="s"></div><div>
-        <h3><a href="${esc(i.link)}" target="_blank" rel="noopener">${esc(i.title)}</a></h3>
-        <div class="m"><span>${esc(i.source)}</span>${t!=='neu'?`<span class="tag ${t}">${toneName[t]}</span>`:''}${i.read?'<span class="tag read" title="Full article text was read">read in full</span>':''}</div></div></article>`;});
-    html+='</div></section>';
-  }
-  tl.innerHTML=html;
+  const todayK=dayKey(new Date()), weekAgo=Date.now()-7*864e5;
+  const recent=new Map(), older=new Map();
+  list.forEach(i=>{const k=dayKey(i.d); if(k===todayK) return; const g=i.d>=weekAgo?recent:older; if(!g.has(k)) g.set(k,[]); g.get(k).push(i);});
+  const dayHtml=groups=>{let html='';
+    for(const [k,arr] of groups){
+      const d=arr[0].d; const c=closeByDay[k];
+      const p=arr.filter(i=>i.score>0).length, n=arr.filter(i=>i.score<0).length;
+      html+=`<section class="day"><div class="day-head"><div class="d">${fmtD.format(d)}</div><div class="w">${fmtW.format(d)}</div>
+        <div class="p">${arr.length} headline${arr.length===1?'':'s'}${(p||n)?` · <span class="up">${p}</span>/<span class="down">${n}</span>`:''}${c?`<br>close <b>$${c.toFixed(2)}</b>`:''}</div></div><div class="items">`;
+      arr.forEach(i=>{const t=tone(i);
+        html+=`<article class="item ${t}"><div class="t">${fmtT.format(i.d)}</div><div class="s"></div><div>
+          <h3><a href="${esc(i.link)}" target="_blank" rel="noopener">${esc(i.title)}</a></h3>
+          <div class="m"><span>${esc(i.source)}</span>${t!=='neu'?`<span class="tag ${t}">${toneName[t]}</span>`:''}${i.read?'<span class="tag read" title="Full article text was read">read in full</span>':''}</div></div></article>`;});
+      html+='</div></section>';
+    }
+    return html;};
+  const tl=document.getElementById('timeline'), old=document.getElementById('timeline-old'), ow=document.getElementById('older');
+  const nRecent=[...recent.values()].reduce((a,b)=>a+b.length,0), nOld=[...older.values()].reduce((a,b)=>a+b.length,0);
+  document.getElementById('recentnote').textContent=nRecent?`${nRecent} headline${nRecent===1?'':'s'} before today`:'';
+  if(!list.length){tl.innerHTML='<div class="empty">No headlines match these filters.</div>';}
+  else if(!recent.size){tl.innerHTML=`<div class="empty">${nOld?'Nothing in the last 7 days besides today — older headlines are below the company data.':'Today’s headlines are above — nothing older yet.'}</div>`;}
+  else tl.innerHTML=dayHtml(recent);
+  ow.hidden=!older.size; document.getElementById('older-jump').hidden=!older.size;
+  document.getElementById('oldnote').textContent=older.size?`${nOld} headline${nOld===1?'':'s'}, more than 7 days ago`:'';
+  old.innerHTML=older.size?dayHtml(older):'';
 }
 if (current===SUMMARY || !companies.length) showSummary(); else show(companies.find(c=>c.ticker===current));
 </script>
