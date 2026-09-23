@@ -105,17 +105,6 @@
     ]
   },
   {
-    "ticker": "SOBKY",
-    "name": "Softbank",
-    "exchange": "OTC Markets",
-    "query": "\"Softbank\" OR \"OTC Markets:SOBKY\"",
-    "match": "Softbank|SOBKY",
-    "sector": "Communication Services",
-    "industry": "Telecom Services",
-    "benchmark": "XLC",
-    "peers": []
-  },
-  {
     "ticker": "SPCX",
     "name": "Space Exploration Technologies",
     "exchange": "NASDAQ",
@@ -161,21 +150,6 @@
     ]
   },
   {
-    "ticker": "IREN",
-    "name": "IREN LIMITED",
-    "exchange": "NASDAQ",
-    "query": "\"IREN LIMITED\" OR \"NASDAQ:IREN\"",
-    "match": "IREN\\ LIMITED|IREN",
-    "sector": "Financial Services",
-    "industry": "Capital Markets",
-    "benchmark": "WGMI",
-    "peers": [
-      "RIOT",
-      "MARA",
-      "CORZ"
-    ]
-  },
-  {
     "ticker": "GEV",
     "name": "GE Vernova",
     "exchange": "NYSE",
@@ -204,5 +178,27 @@
       "ZS",
       "CYBR"
     ]
+  },
+  {
+    "ticker": "LNTH",
+    "name": "Lantheus Holdings",
+    "exchange": "NASDAQ",
+    "query": "\"Lantheus Holdings\" OR \"NASDAQ:LNTH\"",
+    "match": "Lantheus\\ Holdings|LNTH",
+    "sector": "Healthcare",
+    "industry": "Drug Manufacturers—Specialty & Generic",
+    "benchmark": "XLV",
+    "peers": []
+  },
+  {
+    "ticker": "STX",
+    "name": "Seagate Technology Holdings",
+    "exchange": "NASDAQ",
+    "query": "\"Seagate Technology Holdings\" OR \"NASDAQ:STX\"",
+    "match": "Seagate\\ Technology\\ Holdings|STX",
+    "sector": "Technology",
+    "industry": "Computer Hardware",
+    "benchmark": "XLK",
+    "peers": []
   }
 ]
