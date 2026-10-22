@@ -276,7 +276,7 @@ h2.sec small{font-family:var(--font-mono);font-size:12px;color:var(--muted);font
 <div class="tabs" id="tabs" role="tablist" aria-label="Companies"></div>
 
 <div class="addpanel" id="addpanel" hidden>
-  <form id="addform"><input id="addq" type="text" placeholder="Ticker or company name, e.g. NVDA or Tesla" aria-label="Ticker or company name" autocomplete="off"><button class="btn" id="addbtn" type="submit">Track it</button><button class="btn ghost" type="button" id="addclose">Close</button></form>
+  <form id="addform"><input id="addq" type="text" placeholder="Ticker or company name, e.g. NVDA or Tesla" aria-label="Ticker or company name" autocomplete="off"><input id="addpw" type="password" placeholder="Password" aria-label="Password" autocomplete="current-password" style="flex:0 1 170px" hidden><button class="btn" id="addbtn" type="submit">Track it</button><button class="btn ghost" type="button" id="addclose">Close</button></form>
   <div class="msg" id="addmsg"></div>
   <div class="tracked" id="tracked"></div>
 </div>
@@ -464,29 +464,49 @@ function showSummary(){
 // ---- add / remove companies (works when served by server.py; otherwise shows the command to run)
 let API=false;
 const addmsg=document.getElementById('addmsg'), tracked=document.getElementById('tracked');
+// the add/remove password: typed once, kept for this browser tab only
+let PROTECTED=false;
+const addpw=document.getElementById('addpw');
+function savedPw(){ try{return sessionStorage.getItem('newsroom_pw')||'';}catch(e){return '';} }
+function rememberPw(v){ try{ if(v) sessionStorage.setItem('newsroom_pw',v); else sessionStorage.removeItem('newsroom_pw'); }catch(e){} }
+function currentPw(){ return (addpw.value||savedPw()).trim(); }
+function authHeaders(pw){ const h={'Content-Type':'application/json'}; if(PROTECTED) h['X-Admin-Password']=pw; return h; }
+function authFailed(r,j){ if(r.status!==401) return false; rememberPw(''); addpw.hidden=false; addpw.value=''; addpw.focus();
+  addmsg.textContent=(j.auth==='missing'?'Enter the password to change the company list.':'Wrong password.'); addmsg.className='msg err'; return true; }
 function renderTracked(){
   tracked.innerHTML=companies.map(c=>`<span class="chip"><b>${esc(c.ticker)}</b> ${esc(c.name)}${API?`<button title="Stop tracking ${esc(c.name)}" data-t="${esc(c.ticker)}" aria-label="Stop tracking ${esc(c.name)}">✕</button>`:''}</span>`).join('');
   tracked.querySelectorAll('button').forEach(b=>b.onclick=async()=>{
+    let pw=currentPw();
+    if(PROTECTED&&!pw){ pw=(prompt('Password to change the company list:')||'').trim(); if(!pw) return; }
     if(!confirm(`Stop tracking ${b.dataset.t}?`)) return;
-    const r=await fetch('/api/companies/'+b.dataset.t,{method:'DELETE'}); const j=await r.json();
+    const r=await fetch('/api/companies/'+b.dataset.t,{method:'DELETE',headers:authHeaders(pw)}); const j=await r.json();
+    if(authFailed(r,j)) return;
+    if(r.ok) rememberPw(pw);
     addmsg.textContent=j.message||j.error; addmsg.className='msg'+(r.ok?'':' err'); if(r.ok) setTimeout(()=>location.reload(),1500);
   });
 }
 let PERSISTENT=true;
-fetch('/api/health',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{API=!!(j&&j.ok); PERSISTENT=!j||j.persistent!==false; setup();}).catch(()=>{API=false; setup();});
+fetch('/api/health',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{API=!!(j&&j.ok); PERSISTENT=!j||j.persistent!==false; PROTECTED=!!(j&&j.protected); setup();}).catch(()=>{API=false; setup();});
 function setup(){
   renderTracked();
+  addpw.hidden=!(API&&PROTECTED&&!savedPw());
   if(!API){ addmsg.innerHTML='This copy of the page is a snapshot, so it cannot add companies by itself. On the Mac (or on the server) run <code>python3 be_news_agent.py --add NVDA</code> and the next refresh will include it.'; }
   else if(!PERSISTENT){ addmsg.innerHTML='Type a ticker or a name. <b>Note:</b> this server has no persistent storage yet, so companies added here are lost when the service is redeployed. Set GITHUB_TOKEN on Render to keep them.'; }
+  else if(PROTECTED&&!savedPw()) addmsg.textContent='Type a ticker or a name and the password. Adding and removing companies is password-protected.';
   else addmsg.textContent='Type a ticker or a name. The company is looked up, its news collected, and a tab appears after the page reloads.';
 }
 document.getElementById('addform').onsubmit=async e=>{
   e.preventDefault(); const q=document.getElementById('addq').value.trim(); if(!q) return;
   if(!API){ addmsg.innerHTML=`Run this on the Mac or server: <code>python3 be_news_agent.py --add ${esc(q)}</code>`; return; }
+  const pw=currentPw();
+  if(PROTECTED&&!pw){ addpw.hidden=false; addpw.focus(); addmsg.textContent='Enter the password to add a company.'; addmsg.className='msg err'; return; }
   const btn=document.getElementById('addbtn'); btn.disabled=true; addmsg.className='msg'; addmsg.textContent='Looking up '+q+'…';
   try{
-    const r=await fetch('/api/companies',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:q})});
-    const j=await r.json(); addmsg.textContent=j.message||j.error; addmsg.className='msg'+(r.ok?'':' err');
+    const r=await fetch('/api/companies',{method:'POST',headers:authHeaders(pw),body:JSON.stringify({query:q})});
+    const j=await r.json();
+    if(authFailed(r,j)){ btn.disabled=false; return; }
+    if(r.ok){ rememberPw(pw); addpw.hidden=true; }
+    addmsg.textContent=j.message||j.error; addmsg.className='msg'+(r.ok?'':' err');
     if(r.status===201){ let n=35; const t=setInterval(()=>{n--; addmsg.textContent=j.message.replace(/~\d+ seconds/,`~${n} seconds`); if(n<=0){clearInterval(t);location.reload();}},1000); }
   }catch(err){ addmsg.textContent='Could not reach the server: '+err; addmsg.className='msg err'; }
   btn.disabled=false;

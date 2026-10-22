@@ -13,6 +13,8 @@ Environment:
     DATA_DIR       where histories, pictures and companies.json live (mount a Render disk here)
     REFRESH_HOURS  how often to re-collect news while running (default 2)
     UPLOAD_TOKEN   shared secret; the Mac uses it to upload StockTwits data it collected
+    ADMIN_PASSWORD password the page asks for before adding or removing a company (falls back to
+                   UPLOAD_TOKEN, so the add panel is never open to strangers once a token is set)
                    (StockTwits blocks datacenter addresses, home connections work)
     GITHUB_TOKEN   fine-grained GitHub token (Contents: read/write on the repo). With it, companies
                    added or removed on the site are committed to companies.json in the repo, so they
@@ -23,6 +25,8 @@ Routes:
     GET  /api/health            {"ok": true, ...}
     GET  /api/companies         tracked companies
     POST /api/companies         {"query": "NVDA"}  -> adds it, collects its news, rebuilds the page
+                                (needs header X-Admin-Password when ADMIN_PASSWORD/UPLOAD_TOKEN is set)
+    POST /api/auth              {"password": "..."} -> 200 or 401, lets the page check a password
     DELETE /api/companies/NVDA  stops tracking it
     POST /api/refresh           re-collect everything now
     GET  /pictures/BE_latest.png  the daily picture per company
@@ -31,6 +35,7 @@ import argparse
 import json
 import os
 import sys
+import hmac
 import threading
 import time
 import traceback
@@ -84,6 +89,10 @@ def _social_errors():
     return out
 
 
+def _admin_password():
+    return os.environ.get("ADMIN_PASSWORD") or os.environ.get("UPLOAD_TOKEN") or ""
+
+
 def _mounted(path):
     """True when `path` is its own mount point (a Render disk), False for a plain folder."""
     try:
@@ -106,6 +115,18 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         if self.command != "HEAD":
             self.wfile.write(data)
+
+    def _admin_check(self, supplied=None):
+        """None when the caller may change the company list, otherwise the error response to send."""
+        pw = _admin_password()
+        if not pw:
+            return None
+        given = supplied if supplied is not None else (self.headers.get("X-Admin-Password") or "")
+        if not given:
+            return (401, {"error": "Password required.", "auth": "missing"})
+        if not hmac.compare_digest(given.encode(), pw.encode()):
+            return (401, {"error": "Wrong password.", "auth": "wrong"})
+        return None
 
     def _json_body(self):
         n = int(self.headers.get("Content-Length") or 0)
@@ -140,7 +161,7 @@ class Handler(BaseHTTPRequestHandler):
                                     "last_error": STATE["last_error"], "companies": len(agent.load_companies()),
                                     "persistent": bool(os.environ.get("GITHUB_TOKEN") or os.environ.get("DATA_DIR")),
                                     "data_dir": agent.OUT_DIR, "disk_mounted": _mounted(agent.OUT_DIR),
-                                    "social_errors": _social_errors()})
+                                    "protected": bool(_admin_password()), "social_errors": _social_errors()})
         if path == "/api/companies":
             return self._send(200, agent.load_companies())
         if path.startswith("/pictures/"):
@@ -153,7 +174,13 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = self.path.split("?", 1)[0]
+        if path == "/api/auth":
+            denied = self._admin_check(self._json_body().get("password") or "")
+            return self._send(*denied) if denied else self._send(200, {"ok": True})
         if path == "/api/companies":
+            denied = self._admin_check()
+            if denied:
+                return self._send(*denied)
             q = (self._json_body().get("query") or "").strip()
             if not q:
                 return self._send(400, {"error": "Give a ticker or a company name."})
@@ -190,6 +217,9 @@ class Handler(BaseHTTPRequestHandler):
     def do_DELETE(self):
         path = self.path.split("?", 1)[0]
         if path.startswith("/api/companies/"):
+            denied = self._admin_check()
+            if denied:
+                return self._send(*denied)
             t = path.rsplit("/", 1)[1].upper()
             if not agent.remove_company(t):
                 return self._send(404, {"error": f"{t} is not tracked."})
