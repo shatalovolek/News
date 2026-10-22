@@ -13,8 +13,9 @@ Environment:
     DATA_DIR       where histories, pictures and companies.json live (mount a Render disk here)
     REFRESH_HOURS  how often to re-collect news while running (default 2)
     UPLOAD_TOKEN   shared secret; the Mac uses it to upload StockTwits data it collected
-    ADMIN_PASSWORD password the page asks for before adding or removing a company (falls back to
-                   UPLOAD_TOKEN, so the add panel is never open to strangers once a token is set)
+    ADMIN_PASSWORD password the page asks for before adding or removing a company. Precedence:
+                   this variable, then admin_password.txt on the disk (set from the Mac with
+                   POST /api/admin-password + X-Upload-Token), then UPLOAD_TOKEN itself.
                    (StockTwits blocks datacenter addresses, home connections work)
     GITHUB_TOKEN   fine-grained GitHub token (Contents: read/write on the repo). With it, companies
                    added or removed on the site are committed to companies.json in the repo, so they
@@ -89,8 +90,22 @@ def _social_errors():
     return out
 
 
+def _password_file():
+    return os.path.join(agent.OUT_DIR, "admin_password.txt")
+
+
 def _admin_password():
-    return os.environ.get("ADMIN_PASSWORD") or os.environ.get("UPLOAD_TOKEN") or ""
+    """ADMIN_PASSWORD env, else the password set from the Mac (admin_password.txt on the disk), else UPLOAD_TOKEN."""
+    if os.environ.get("ADMIN_PASSWORD"):
+        return os.environ["ADMIN_PASSWORD"]
+    try:
+        with open(_password_file()) as f:
+            saved = f.read().strip()
+        if saved:
+            return saved
+    except OSError:
+        pass
+    return os.environ.get("UPLOAD_TOKEN") or ""
 
 
 def _mounted(path):
@@ -174,6 +189,17 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = self.path.split("?", 1)[0]
+        if path == "/api/admin-password":
+            # set the add/remove password from the Mac, authenticated with the upload token
+            token = os.environ.get("UPLOAD_TOKEN")
+            if not token or self.headers.get("X-Upload-Token") != token:
+                return self._send(401, {"error": "bad or missing X-Upload-Token"})
+            new = (self._json_body().get("password") or "").strip()
+            if len(new) < 4:
+                return self._send(400, {"error": "password too short"})
+            with open(_password_file(), "w") as f:
+                f.write(new + "\n")
+            return self._send(200, {"message": "Admin password updated.", "source": "file" if not os.environ.get("ADMIN_PASSWORD") else "env (ADMIN_PASSWORD still takes precedence)"})
         if path == "/api/auth":
             denied = self._admin_check(self._json_body().get("password") or "")
             return self._send(*denied) if denied else self._send(200, {"ok": True})

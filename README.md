@@ -98,11 +98,15 @@ starts from the updated list. The add panel warns when persistence is off.
 With the disk in place the token is optional; it only adds a copy of the list in the repo.
 
 ## Password for the company list
-Anyone can read the page; adding or removing a company needs a password. Set `ADMIN_PASSWORD`
-in Render → Environment (any phrase you can type). Without it the server falls back to
-`UPLOAD_TOKEN`, so the panel is never open to bots once the Mac upload is configured. The page
-asks for the password once per browser tab and sends it as the `X-Admin-Password` header;
-`POST /api/auth {"password"}` checks it. With neither variable set, the panel is open (local use).
+Anyone can read the page; adding or removing a company needs a password. The server takes it
+from, in this order: `ADMIN_PASSWORD` (Render → Environment), `admin_password.txt` on the data
+disk, `UPLOAD_TOKEN`. The file is set from the Mac without touching Render:
+```
+python3 be_news_agent.py --set-password babayaga
+```
+(uses `push.json`; the request is `POST /api/admin-password {"password"}` with `X-Upload-Token`).
+The page asks for the password once per browser tab and sends it as the `X-Admin-Password`
+header; `POST /api/auth {"password"}` checks it. With nothing set, the panel is open (local use).
 
 ## Short interest
 `shorts.py` stores a dated Finviz snapshot on every run (short % of float, days to cover, shares

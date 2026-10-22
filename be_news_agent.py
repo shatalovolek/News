@@ -921,10 +921,18 @@ def main():
     ap.add_argument("--add", metavar="TICKER_OR_NAME", help="add a company to track (e.g. NVDA or Tesla), then run it")
     ap.add_argument("--remove", metavar="TICKER", help="stop tracking a company")
     ap.add_argument("--push", action="store_true", help="upload collected social data to the website (needs push.json)")
+    ap.add_argument("--set-password", metavar="PASSWORD", help="set the website's add/remove-company password (uses push.json) and exit")
     ap.add_argument("--companies-from", metavar="URL", help="use the company list of a running site instead of the local one")
     args = ap.parse_args()
 
-    push = push_config() if args.push else None
+    push = push_config() if (args.push or args.set_password) else None
+    if args.set_password:
+        if not push:
+            sys.exit("--set-password needs push.json / PUSH_URL+PUSH_TOKEN")
+        r = requests.post(push["url"].rstrip("/") + "/api/admin-password", json={"password": args.set_password},
+                          headers={"X-Upload-Token": push["token"], "User-Agent": HEADERS["User-Agent"]}, timeout=30)
+        print(r.status_code, r.json())
+        return
     if args.push and not push:
         print("[warn] --push given but push.json / PUSH_URL+PUSH_TOKEN missing; not uploading", file=sys.stderr)
     if args.companies_from or (push and not args.companies_from):
